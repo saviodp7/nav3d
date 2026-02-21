@@ -1,0 +1,18 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithDistanceReplanning3D">
+      <DistanceController distance="1.0">
+        <ComputePathToPose goal="{goal}"
+                           path="{path}"
+                           planner_id="Moveit"
+                           error_code_id="{compute_path_error_code}"
+                           error_msg="{compute_path_error_msg}"/>
+      </DistanceController>
+
+      <FollowPath path="{path}"
+                  controller_id="FollowPath"
+                  error_code_id="{follow_path_error_code}"
+                  error_msg="{follow_path_error_msg}"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

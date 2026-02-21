@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="3" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <GoalUpdatedController>
+          <RateController hz="1.0" name="PlanningRate">
+            <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}"
+                               error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
+          </RateController>
+        </GoalUpdatedController>
+
+        <!-- TODO(nav3d): when IsPathValid is available, add a validation gate here -->
+        <!-- <IsPathValid path="{path}" service_name="/x500/is_path_valid" server_timeout="2000"/> -->
+
+        <FollowPath path="{path}" controller_id="{selected_controller}"
+                    error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"/>
+      </PipelineSequence>
+
+      <ReactiveFallback name="RecoveryActions">
+        <GoalUpdated/>
+
+        <Sequence>
+          <CancelControl/>
+          <Wait wait_duration="0.5"/>
+        </Sequence>
+
+        <!-- TODO(nav3d): replace with drone-appropriate recovery (hover/ascend/loiter) -->
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

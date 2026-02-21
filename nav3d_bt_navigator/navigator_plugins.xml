@@ -1,0 +1,17 @@
+<class_libraries>
+  <library path="nav3d_navigate_to_pose_navigator">
+    <class
+      type="nav3d_bt_navigator::NavigateToPoseNavigator"
+      base_class_type="nav3d_core::NavigatorBase">
+      <description>Navigate to Pose Navigator</description>
+    </class>
+  </library>
+
+  <library path="nav3d_navigate_through_poses">
+    <class
+      type="nav3d_bt_navigator::NavigateThroughPosesNavigator"
+      base_class_type="nav3d_core::NavigatorBase">
+      <description>Navigate through Poses Navigator</description>
+    </class>
+  </library>
+</class_libraries>

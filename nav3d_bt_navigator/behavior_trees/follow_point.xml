@@ -1,0 +1,26 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="FollowDynamicPose3D">
+      <RateController hz="2.0">
+        <Sequence>
+          <GoalUpdater input_goal="{goal}" output_goal="{updated_goal}">
+            <ComputePathToPose goal="{updated_goal}"
+                               path="{path}"
+                               planner_id="Moveit"
+                               error_code_id="{compute_path_error_code}"
+                               error_msg="{compute_path_error_msg}"/>
+          </GoalUpdater>
+
+          <TruncatePath distance="1.0"
+                        input_path="{path}"
+                        output_path="{truncated_path}"/>
+        </Sequence>
+      </RateController>
+
+      <FollowPath path="{truncated_path}"
+                  controller_id="FollowPath"
+                  error_code_id="{follow_path_error_code}"
+                  error_msg="{follow_path_error_msg}"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>
