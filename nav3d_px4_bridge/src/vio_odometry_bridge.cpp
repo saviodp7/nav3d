@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <functional>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
