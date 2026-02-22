@@ -109,7 +109,7 @@ void MoveGroupInterface::setYawMode(YawMode mode, double fixed_yaw)
   fixed_yaw_ = fixed_yaw;
 }
 
-std::vector<geometry_msgs::msg::PoseStamped> MoveGroupInterface::planToGoalOnly(
+std::vector<geometry_msgs::msg::PoseStamped> MoveGroupInterface::plan(
   const geometry_msgs::msg::PoseStamped & goal,
   const std::function<bool()> & cancel_checker)
 {
