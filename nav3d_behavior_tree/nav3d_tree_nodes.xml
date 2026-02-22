@@ -280,6 +280,12 @@
       <input_port name="is_voltage">Bool if check based on voltage or total %</input_port>
     </Condition>
 
+    <Condition ID="IsPathValid">
+      <input_port name="path">Path to validate</input_port>
+      <input_port name="service_name" default="is_path_valid">Service name</input_port>
+      <input_port name="server_timeout">Server timeout</input_port>
+    </Condition>
+
     <Condition ID="IsBatteryCharging">
       <input_port name="battery_topic">Topic for battery info</input_port>
     </Condition>

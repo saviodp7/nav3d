@@ -128,6 +128,9 @@ list(APPEND plugin_libs nav3d_is_battery_charging_condition_bt_node)
 add_library(nav3d_is_battery_low_condition_bt_node SHARED plugins/condition/is_battery_low_condition.cpp)
 list(APPEND plugin_libs nav3d_is_battery_low_condition_bt_node)
 
+add_library(nav3d_is_path_valid_condition_bt_node SHARED plugins/condition/is_path_valid_condition.cpp)
+list(APPEND plugin_libs nav3d_is_path_valid_condition_bt_node)
+
 add_library(nav3d_are_error_codes_active_condition_bt_node SHARED plugins/condition/are_error_codes_present_condition.cpp)
 list(APPEND plugin_libs nav3d_are_error_codes_active_condition_bt_node)
 
