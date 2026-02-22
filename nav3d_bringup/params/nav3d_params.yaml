@@ -4,6 +4,7 @@ planner_server:
 
     Moveit:
       plugin: "nav3d_planner_plugin_moveit/MoveItGlobalPlanner"
+      yaw_mode: "directional"
 
     global_frame: "map"
     robot_base_frame: "base_link"
