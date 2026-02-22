@@ -64,7 +64,7 @@ void MoveItGlobalPlanner::configure(
     node_->declare_parameter(name_ + ".planner_id", std::string(""));
   }
   if (!node_->has_parameter(name_ + ".yaw_mode")) {
-    node_->declare_parameter(name_ + ".yaw_mode", std::string("keep"));
+    node_->declare_parameter(name_ + ".yaw_mode", std::string("directional"));
   }
   if (!node_->has_parameter(name_ + ".fixed_yaw")) {
     node_->declare_parameter(name_ + ".fixed_yaw", 0.0);
@@ -207,7 +207,7 @@ nav_msgs::msg::Path MoveItGlobalPlanner::createPlan(
     return empty;
   }
 
-  const auto poses = move_group_interface_->planToGoalOnly(goal, cancel_checker);
+  const auto poses = move_group_interface_->plan(goal, cancel_checker);
   if (poses.empty()) {
     return empty;
   }
