@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -12,12 +13,13 @@
 #include "tf2_ros/buffer.h"
 
 #include "nav3d_core/global_planner.hpp"
+#include "nav3d_core/path_validity_checker.hpp"
 #include "nav3d_planner_plugin_moveit/movegroup_interface.hpp"
 
 namespace nav3d_planner_plugin_moveit
 {
 
-class MoveItGlobalPlanner final : public nav3d_core::GlobalPlanner
+class MoveItGlobalPlanner final : public nav3d_core::GlobalPlanner, public nav3d_core::PathValidityChecker
 {
 public:
   MoveItGlobalPlanner() = default;
@@ -31,6 +33,10 @@ public:
   void cleanup() override;
   void activate() override;
   void deactivate() override;
+
+  bool isPathValid(
+    const nav_msgs::msg::Path & path,
+    std::vector<int32_t> & invalid_pose_indices) override;
 
   nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
@@ -50,6 +56,11 @@ private:
   int planning_attempts_{3};
 
   bool active_{false};
+
+  int validity_step_{2};
+  int validity_max_checks_{200};
+  int validity_timeout_ms_{50};
+  std::string state_validity_service_name_{"check_state_validity"};
 
   std::string global_frame_{"map"};
   double transform_tolerance_{0.1};

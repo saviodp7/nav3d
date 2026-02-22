@@ -3,6 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <utility>
+#include <algorithm>
 
 #include "pluginlib/class_list_macros.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -70,6 +71,19 @@ void MoveItGlobalPlanner::configure(
     node_->declare_parameter(name_ + ".fixed_yaw", 0.0);
   }
 
+  if (!node_->has_parameter(name_ + ".validity.step")) {
+    node_->declare_parameter(name_ + ".validity.step", validity_step_);
+  }
+  if (!node_->has_parameter(name_ + ".validity.max_checks")) {
+    node_->declare_parameter(name_ + ".validity.max_checks", validity_max_checks_);
+  }
+  if (!node_->has_parameter(name_ + ".validity.timeout_ms")) {
+    node_->declare_parameter(name_ + ".validity.timeout_ms", validity_timeout_ms_);
+  }
+  if (!node_->has_parameter(name_ + ".validity.state_validity_service")) {
+    node_->declare_parameter(name_ + ".validity.state_validity_service", state_validity_service_name_);
+  }
+
   if (!node_->has_parameter(name_ + ".workspace.min_x")) {
     node_->declare_parameter(name_ + ".workspace.min_x", -0.5);
   }
@@ -109,7 +123,13 @@ void MoveItGlobalPlanner::configure(
   const auto max_y = node_->get_parameter(name_ + ".workspace.max_y").as_double();
   const auto max_z = node_->get_parameter(name_ + ".workspace.max_z").as_double();
 
+  validity_step_ = static_cast<int>(node_->get_parameter(name_ + ".validity.step").as_int());
+  validity_max_checks_ = static_cast<int>(node_->get_parameter(name_ + ".validity.max_checks").as_int());
+  validity_timeout_ms_ = static_cast<int>(node_->get_parameter(name_ + ".validity.timeout_ms").as_int());
+  state_validity_service_name_ = node_->get_parameter(name_ + ".validity.state_validity_service").as_string();
+
   move_group_interface_ = std::make_unique<MoveGroupInterface>(node_, planning_group_);
+  move_group_interface_->setStateValidityServiceName(state_validity_service_name_);
   move_group_interface_->setPlanningParameters(planning_time_, planning_attempts_);
   move_group_interface_->setPlannerIds(pipeline_id, planner_id);
   move_group_interface_->setWorkspaceConstraints(min_x, min_y, min_z, max_x, max_y, max_z);
@@ -139,6 +159,40 @@ void MoveItGlobalPlanner::activate()
 void MoveItGlobalPlanner::deactivate()
 {
   active_ = false;
+}
+
+bool MoveItGlobalPlanner::isPathValid(
+  const nav_msgs::msg::Path & path,
+  std::vector<int32_t> & invalid_pose_indices)
+{
+  invalid_pose_indices.clear();
+
+  if (!active_ || !node_ || !move_group_interface_) {
+    return true;
+  }
+
+  if (path.poses.empty()) {
+    return true;
+  }
+
+  const auto timeout = std::chrono::milliseconds(std::max(0, validity_timeout_ms_));
+
+  const int step = std::max(1, validity_step_);
+  const int max_checks = std::max(1, validity_max_checks_);
+
+  int checks = 0;
+  for (size_t i = 0; i < path.poses.size(); i += static_cast<size_t>(step)) {
+    if (++checks > max_checks) {
+      break;
+    }
+
+    if (!move_group_interface_->isPoseValid(path.poses[i], timeout)) {
+      invalid_pose_indices.push_back(static_cast<int32_t>(i));
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool MoveItGlobalPlanner::validatePose(const geometry_msgs::msg::PoseStamped & pose) const
