@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<library path="nav3d_planner_plugin_moveit">
+  <class
+    name="nav3d_planner_plugin_moveit/MoveItGlobalPlanner"
+    type="nav3d_planner_plugin_moveit::MoveItGlobalPlanner"
+    base_class_type="nav3d_core::GlobalPlanner">
+    <description>MoveIt-based global planner producing nav_msgs/Path.</description>
+  </class>
+</library>
