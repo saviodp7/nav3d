@@ -16,6 +16,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(nav3d_core REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -44,6 +45,7 @@ ament_target_dependencies(${PROJECT_NAME}
   nav3d_core
   geometry_msgs
   nav_msgs
+  sensor_msgs
   tf2
   tf2_ros
   tf2_geometry_msgs

@@ -1,6 +1,7 @@
 #include "nav3d_planner_plugin_moveit/movegroup_interface.hpp"
 
 #include <cmath>
+#include <future>
 #include <stdexcept>
 #include <utility>
 
@@ -107,6 +108,74 @@ void MoveGroupInterface::setYawMode(YawMode mode, double fixed_yaw)
 {
   yaw_mode_ = mode;
   fixed_yaw_ = fixed_yaw;
+}
+
+void MoveGroupInterface::setStateValidityServiceName(std::string service_name)
+{
+  state_validity_service_name_ = std::move(service_name);
+  state_validity_client_.reset();
+
+  if (!state_validity_service_name_.empty()) {
+    state_validity_client_ =
+      node_->create_client<moveit_msgs::srv::GetStateValidity>(state_validity_service_name_);
+  }
+}
+
+bool MoveGroupInterface::isPoseValid(
+  const geometry_msgs::msg::PoseStamped & pose,
+  std::chrono::milliseconds timeout)
+{
+  if (!state_validity_client_) {
+    setStateValidityServiceName(state_validity_service_name_);
+  }
+
+  if (!state_validity_client_) {
+    return true;
+  }
+
+  if (!state_validity_client_->wait_for_service(timeout)) {
+    return true;
+  }
+
+  auto request = std::make_shared<moveit_msgs::srv::GetStateValidity::Request>();
+  request->group_name = planning_group_;
+  request->robot_state.is_diff = true;
+
+  sensor_msgs::msg::JointState js;
+  js.header.stamp = node_->now();
+  js.name = {
+    "virtual_joint/trans_x",
+    "virtual_joint/trans_y",
+    "virtual_joint/trans_z",
+    "virtual_joint/rot_x",
+    "virtual_joint/rot_y",
+    "virtual_joint/rot_z",
+    "virtual_joint/rot_w",
+  };
+  js.position = {
+    pose.pose.position.x,
+    pose.pose.position.y,
+    pose.pose.position.z,
+    pose.pose.orientation.x,
+    pose.pose.orientation.y,
+    pose.pose.orientation.z,
+    pose.pose.orientation.w,
+  };
+
+  request->robot_state.joint_state = std::move(js);
+
+  auto future = state_validity_client_->async_send_request(request);
+
+  if (future.wait_for(timeout) != std::future_status::ready) {
+    return true;
+  }
+
+  try {
+    const auto response = future.get();
+    return response ? response->valid : true;
+  } catch (...) {
+    return true;
+  }
 }
 
 std::vector<geometry_msgs::msg::PoseStamped> MoveGroupInterface::plan(

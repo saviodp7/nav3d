@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
@@ -8,6 +9,8 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "moveit/move_group_interface/move_group_interface.h"
+#include "moveit_msgs/srv/get_state_validity.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
@@ -41,6 +44,12 @@ public:
 
   void setYawMode(YawMode mode, double fixed_yaw);
 
+  void setStateValidityServiceName(std::string service_name);
+
+  bool isPoseValid(
+    const geometry_msgs::msg::PoseStamped & pose,
+    std::chrono::milliseconds timeout);
+
   std::vector<geometry_msgs::msg::PoseStamped> plan(
     const geometry_msgs::msg::PoseStamped & goal,
     const std::function<bool()> & cancel_checker);
@@ -63,6 +72,8 @@ private:
   std::string planner_id_{};
 
   YawMode yaw_mode_{YawMode::Directional};
+  std::string state_validity_service_name_{"check_state_validity"};
+  rclcpp::Client<moveit_msgs::srv::GetStateValidity>::SharedPtr state_validity_client_;
   double fixed_yaw_{0.0};
 
   void startExecutor();
