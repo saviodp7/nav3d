@@ -1,0 +1,25 @@
+planner_server:
+  ros__parameters:
+    planner_plugins: ["Moveit"]
+
+    Moveit:
+      plugin: "nav3d_planner_plugin_moveit/MoveItGlobalPlanner"
+
+    global_frame: "map"
+    robot_base_frame: "base_link"
+    transform_tolerance: 0.1
+
+controller_server:
+  ros__parameters:
+    controller_frequency: 10.0
+    waypoint_topic: "offboard/waypoint"
+
+    global_frame: "map"
+    robot_base_frame: "base_link"
+    transform_tolerance: 0.1
+
+    xyz_goal_tolerance: 0.2
+    yaw_goal_tolerance: 0.2
+
+    speed_limit_topic: "speed_limit"
+    default_speed_limit: 0.5
