@@ -41,7 +41,7 @@ public:
 
   void setYawMode(YawMode mode, double fixed_yaw);
 
-  std::vector<geometry_msgs::msg::PoseStamped> planToGoalOnly(
+  std::vector<geometry_msgs::msg::PoseStamped> plan(
     const geometry_msgs::msg::PoseStamped & goal,
     const std::function<bool()> & cancel_checker);
 
@@ -62,7 +62,7 @@ private:
   std::string pipeline_id_{};
   std::string planner_id_{};
 
-  YawMode yaw_mode_{YawMode::Keep};
+  YawMode yaw_mode_{YawMode::Directional};
   double fixed_yaw_{0.0};
 
   void startExecutor();
