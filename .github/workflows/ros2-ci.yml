@@ -1,0 +1,93 @@
+name: ROS 2 CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ros2-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: ROS 2 Humble build and test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    container:
+      image: ubuntu:jammy
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve dependency manifest path
+        id: dependency_manifest
+        shell: bash
+        run: |
+          echo "url=file://${GITHUB_WORKSPACE}/.github/dependencies.repos" \
+            >> "${GITHUB_OUTPUT}"
+
+      - name: Set up ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      - name: Fix BehaviorTree.CPP library path
+        shell: bash
+        run: |
+          BT_MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
+          ln -snf "${BT_MULTIARCH}/libbehaviortree_cpp.so" \
+            /opt/ros/humble/lib/libbehaviortree_cpp.so
+
+      - name: Install dependencies, build, and test
+        id: ros_ci
+        uses: ros-tooling/action-ros-ci@v0.4
+        with:
+          target-ros2-distro: humble
+          package-name: >-
+            px4_msgs
+            nav3d_msgs
+            nav3d_common
+            nav3d_util
+            nav3d_core
+            nav3d_behavior_tree
+            nav3d_planner
+            nav3d_planner_plugin_moveit
+            nav3d_controller
+            nav3d_bt_navigator
+            nav3d_lifecycle_manager
+            nav3d_px4_bridge
+            nav3d_gz_bridge
+            nav3d_bringup
+          vcs-repo-file-url: ${{ steps.dependency_manifest.outputs.url }}
+          coverage-result: false
+
+      - name: Show detailed test results
+        if: always()
+        shell: bash
+        env:
+          ROS_WORKSPACE: ${{ steps.ros_ci.outputs.ros-workspace-directory-name }}
+        run: |
+          if [[ -d "${ROS_WORKSPACE}/build" ]]; then
+            colcon test-result \
+              --test-result-base "${ROS_WORKSPACE}/build" \
+              --verbose
+          else
+            echo "No colcon build directory was created."
+          fi
+
+      - name: Upload colcon logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: colcon-logs
+          path: ros_ws/log
+          if-no-files-found: warn
+          retention-days: 14
