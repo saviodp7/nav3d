@@ -3,9 +3,10 @@ import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution, TextSubstitution
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution, TextSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -37,8 +38,17 @@ def generate_launch_description() -> LaunchDescription:
     namespace = params.get("nav3d_launcher", {}).get("ros__parameters", {}).get("namespace", "")
     robot_name = params.get("nav3d_launcher", {}).get("ros__parameters", {}).get("robot_name", "x500")
     use_sim_time = params.get("nav3d_launcher", {}).get("ros__parameters", {}).get("use_sim_time", True)
-    use_rviz = params.get("nav3d_launcher", {}).get("ros__parameters", {}).get("use_rviz", True)
+    default_use_rviz = params.get("nav3d_launcher", {}).get("ros__parameters", {}).get("use_rviz", True)
+    use_rviz = LaunchConfiguration("use_rviz")
     rviz_config_file = params.get("nav3d_launcher", {}).get("ros__parameters", {}).get("rviz_config_file", "nav3d.rviz")
+
+    ld.add_action(
+        DeclareLaunchArgument(
+            "use_rviz",
+            default_value=str(default_use_rviz).lower(),
+            description="Start RViz as part of Nav3D bringup",
+        )
+    )
 
     description_pkg = [TextSubstitution(text=robot_name), TextSubstitution(text="_description")]
     xacro_file = PathJoinSubstitution(
@@ -77,16 +87,16 @@ def generate_launch_description() -> LaunchDescription:
     )
     ld.add_action(start_gz_bridge_cmd)
 
-    if use_rviz:
-        rviz_cmd = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, "rviz.launch.py")),
-            launch_arguments={
-                "use_sim_time": str(use_sim_time),
-                "rviz_config": os.path.join(bringup_dir, "rviz", rviz_config_file),
-                "namespace": namespace,
-            }.items(),
-        )
-        ld.add_action(rviz_cmd)
+    rviz_cmd = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(launch_dir, "rviz.launch.py")),
+        condition=IfCondition(use_rviz),
+        launch_arguments={
+            "use_sim_time": str(use_sim_time),
+            "rviz_config": os.path.join(bringup_dir, "rviz", rviz_config_file),
+            "namespace": namespace,
+        }.items(),
+    )
+    ld.add_action(rviz_cmd)
     start_navigation_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(launch_dir, "navigation.launch.py")),
         launch_arguments={

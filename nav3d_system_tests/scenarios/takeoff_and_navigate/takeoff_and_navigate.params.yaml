@@ -1,0 +1,17 @@
+takeoff_and_navigate_test:
+  ros__parameters:
+    goal_x: 8.0
+    goal_y: 0.0
+    goal_z: 1.5
+    goal_yaw: 0.0
+
+    readiness_timeout_s: 90.0
+    takeoff_timeout_s: 60.0
+    navigation_timeout_s: 90.0
+
+    minimum_takeoff_altitude: 0.8
+    takeoff_vertical_speed_tolerance: 0.25
+    takeoff_stability_duration_s: 1.0
+
+    position_tolerance: 0.3
+    yaw_tolerance: 0.3

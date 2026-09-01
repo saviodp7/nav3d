@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nav3d_system_tests</name>
+  <version>0.1.0</version>
+  <description>Standalone scenario-based system tests for Nav3D simulation.</description>
+  <maintainer email="salvatoredelpeschio@gmail.com">Salvatore Del Peschio</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>action_msgs</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>nav3d_bringup</exec_depend>
+  <exec_depend>nav3d_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>px4_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

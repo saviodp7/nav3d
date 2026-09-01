@@ -92,7 +92,7 @@ def generate_launch_description():
             launch_ros.actions.Node(
                 package="ros_gz_bridge",
                 executable="parameter_bridge",
-                arguments=["/model/x500_depth_0/odometry@nav_msgs/msg/Odometry@gz.msgs.Odometry"],
+                arguments=["/model/x500_depth_0/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry"],
                 remappings=[("/model/x500_depth_0/odometry", "/odom")],
                 output="screen",
                 parameters=[use_sim_time],
@@ -100,7 +100,7 @@ def generate_launch_description():
             launch_ros.actions.Node(
                 package="ros_gz_bridge",
                 executable="parameter_bridge",
-                arguments=["/depth_camera@sensor_msgs/msg/Image@gz.msgs.Image"],
+                arguments=["/depth_camera@sensor_msgs/msg/Image[gz.msgs.Image"],
                 remappings=[("/depth_camera", "/camera/depth/image_raw")],
                 output="screen",
                 parameters=[use_sim_time],
@@ -108,7 +108,7 @@ def generate_launch_description():
             launch_ros.actions.Node(
                 package="ros_gz_bridge",
                 executable="parameter_bridge",
-                arguments=["/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo"],
+                arguments=["/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo"],
                 remappings=[("/camera_info", "/camera/camera_info")],
                 output="screen",
                 parameters=[use_sim_time],
@@ -116,7 +116,7 @@ def generate_launch_description():
             launch_ros.actions.Node(
                 package="ros_gz_bridge",
                 executable="parameter_bridge",
-                arguments=["/depth_camera/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked"],
+                arguments=["/depth_camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked"],
                 remappings=[("/depth_camera/points", "/camera/depth/points")],
                 output="screen",
                 parameters=[
@@ -124,7 +124,7 @@ def generate_launch_description():
                     {
                         "qos_overrides./camera/depth/points.publisher.reliability": "best_effort",
                         "qos_overrides./camera/depth/points.publisher.history": "keep_last",
-                        "qos_overrides./camera/depth/points.publisher.depth": 5,
+                        "qos_overrides./camera/depth/points.publisher.depth": 1,
                     },
                 ],
             ),

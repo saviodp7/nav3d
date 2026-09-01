@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+scenario="${1:-takeoff_and_navigate}"
+if [[ $# -gt 0 ]]; then
+  shift
+fi
+
+case "${scenario}" in
+  takeoff_and_navigate)
+    exec ros2 launch nav3d_system_tests takeoff_and_navigate.launch.py "$@"
+    ;;
+  *)
+    echo "Unknown Nav3D system-test scenario: ${scenario}" >&2
+    echo "Available scenarios: takeoff_and_navigate" >&2
+    exit 2
+    ;;
+esac
