@@ -1,35 +1,26 @@
 #pragma once
 
+#include "behaviortree_cpp/decorator_node.h"
+
 #include <chrono>
 #include <string>
 
-#include "behaviortree_cpp/decorator_node.h"
+namespace nav3d_behavior_tree {
 
-namespace nav3d_behavior_tree
-{
+class RateController : public BT::DecoratorNode {
+  public:
+    RateController(const std::string& name, const BT::NodeConfiguration& conf);
 
-class RateController : public BT::DecoratorNode
-{
-public:
-  RateController(
-    const std::string & name,
-    const BT::NodeConfiguration & conf);
+    void initialize();
 
-  void initialize();
+    static BT::PortsList providedPorts() { return {BT::InputPort<double>("hz", 10.0, "Rate")}; }
 
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<double>("hz", 10.0, "Rate")
-    };
-  }
+  private:
+    BT::NodeStatus tick() override;
 
-private:
-  BT::NodeStatus tick() override;
-
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
-  double period_;
-  bool first_time_;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+    double period_;
+    bool first_time_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

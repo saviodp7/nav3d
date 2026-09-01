@@ -1,26 +1,19 @@
 #pragma once
 
-#include <string>
-
 #include "behaviortree_cpp/behavior_tree.h"
 #include "nav3d_behavior_tree/bt_utils.hpp"
 
-namespace nav3d_behavior_tree
-{
+#include <string>
 
-class InitialPoseReceived : public BT::ConditionNode
-{
-public:
-  InitialPoseReceived(
-    const std::string & name,
-    const BT::NodeConfiguration & config);
+namespace nav3d_behavior_tree {
 
-  static BT::PortsList providedPorts()
-  {
-    return {BT::InputPort<bool>("initial_pose_received")};
-  }
+class InitialPoseReceived : public BT::ConditionNode {
+  public:
+    InitialPoseReceived(const std::string& name, const BT::NodeConfiguration& config);
 
-  BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts() { return {BT::InputPort<bool>("initial_pose_received")}; }
+
+    BT::NodeStatus tick() override;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

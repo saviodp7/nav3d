@@ -10,51 +10,58 @@ find_package(std_msgs REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(action_msgs REQUIRED)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wno-error=deprecated)
-endif()
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-error=deprecated)
+endif ()
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/CollisionMonitorState.msg"
-  "msg/CollisionDetectorState.msg"
-  "msg/SpeedLimit.msg"
-  "msg/BehaviorTreeStatusChange.msg"
-  "msg/BehaviorTreeLog.msg"
-  "msg/Particle.msg"
-  "msg/ParticleCloud.msg"
-  "msg/WaypointStatus.msg"
-  "msg/Route.msg"
-  "msg/RouteNode.msg"
-  "msg/RouteEdge.msg"
-  "msg/EdgeCost.msg"
-  "msg/Trajectory.msg"
-  "msg/TrajectoryPoint.msg"
-  "srv/IsPathValid.srv"
-  "srv/ManageLifecycleNodes.srv"
-  "srv/LoadMap.srv"
-  "srv/SaveMap.srv"
-  "srv/SetInitialPose.srv"
-  "srv/ReloadDockDatabase.srv"
-  "srv/SetRouteGraph.srv"
-  "srv/DynamicEdges.srv"
-  "action/AssistedTeleop.action"
-  "action/BackUp.action"
-  "action/ComputePathToPose.action"
-  "action/ComputePathThroughPoses.action"
-  "action/DriveOnHeading.action"
-  "action/SmoothPath.action"
-  "action/FollowPath.action"
-  "action/NavigateToPose.action"
-  "action/NavigateThroughPoses.action"
-  "action/Wait.action"
-  "action/Spin.action"
-  "action/FollowWaypoints.action"
-  "action/FollowGPSWaypoints.action"
-  "action/DockRobot.action"
-  "action/UndockRobot.action"
-  "action/ComputeRoute.action"
-  "action/ComputeAndTrackRoute.action"
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs geographic_msgs
+rosidl_generate_interfaces(
+    ${PROJECT_NAME}
+    "msg/CollisionMonitorState.msg"
+    "msg/CollisionDetectorState.msg"
+    "msg/SpeedLimit.msg"
+    "msg/BehaviorTreeStatusChange.msg"
+    "msg/BehaviorTreeLog.msg"
+    "msg/Particle.msg"
+    "msg/ParticleCloud.msg"
+    "msg/WaypointStatus.msg"
+    "msg/Route.msg"
+    "msg/RouteNode.msg"
+    "msg/RouteEdge.msg"
+    "msg/EdgeCost.msg"
+    "msg/Trajectory.msg"
+    "msg/TrajectoryPoint.msg"
+    "srv/IsPathValid.srv"
+    "srv/ManageLifecycleNodes.srv"
+    "srv/LoadMap.srv"
+    "srv/SaveMap.srv"
+    "srv/SetInitialPose.srv"
+    "srv/ReloadDockDatabase.srv"
+    "srv/SetRouteGraph.srv"
+    "srv/DynamicEdges.srv"
+    "action/AssistedTeleop.action"
+    "action/BackUp.action"
+    "action/ComputePathToPose.action"
+    "action/ComputePathThroughPoses.action"
+    "action/DriveOnHeading.action"
+    "action/SmoothPath.action"
+    "action/FollowPath.action"
+    "action/NavigateToPose.action"
+    "action/NavigateThroughPoses.action"
+    "action/Wait.action"
+    "action/Spin.action"
+    "action/FollowWaypoints.action"
+    "action/FollowGPSWaypoints.action"
+    "action/DockRobot.action"
+    "action/UndockRobot.action"
+    "action/ComputeRoute.action"
+    "action/ComputeAndTrackRoute.action"
+    DEPENDENCIES
+    builtin_interfaces
+    geometry_msgs
+    std_msgs
+    action_msgs
+    nav_msgs
+    geographic_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

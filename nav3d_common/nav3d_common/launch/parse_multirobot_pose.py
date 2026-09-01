@@ -9,6 +9,7 @@ class ParseMultiRobotPose(launch.Substitution):  # type: ignore[misc]
     def __init__(self, robots_argument: launch.SomeSubstitutionsType) -> None:
         super().__init__()
         from launch.utilities import normalize_to_list_of_substitutions
+
         self._robots_argument = normalize_to_list_of_substitutions(robots_argument)
 
     def describe(self) -> str:

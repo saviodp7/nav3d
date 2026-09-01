@@ -1,40 +1,35 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include "behaviortree_cpp/action_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "nav3d_behavior_tree/bt_utils.hpp"
 #include "nav3d_behavior_tree/json_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
 
-namespace nav3d_behavior_tree
-{
+#include <memory>
+#include <string>
 
-class TruncatePath : public BT::ActionNodeBase
-{
-public:
-  TruncatePath(
-    const std::string & xml_tag_name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  static BT::PortsList providedPorts()
-  {
-    BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
+class TruncatePath : public BT::ActionNodeBase {
+  public:
+    TruncatePath(const std::string& xml_tag_name, const BT::NodeConfiguration& conf);
 
-    return {
-      BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
-      BT::OutputPort<nav_msgs::msg::Path>("output_path", "Path truncated to a certain distance"),
-      BT::InputPort<double>("distance", 1.0, "distance"),
-    };
-  }
+    static BT::PortsList providedPorts() {
+        BT::RegisterJsonDefinition<nav_msgs::msg::Path>();
 
-private:
-  void halt() override {}
-  BT::NodeStatus tick() override;
+        return {
+            BT::InputPort<nav_msgs::msg::Path>("input_path", "Original Path"),
+            BT::OutputPort<nav_msgs::msg::Path>("output_path", "Path truncated to a certain distance"),
+            BT::InputPort<double>("distance", 1.0, "distance"),
+        };
+    }
 
-  double distance_;
+  private:
+    void halt() override {}
+    BT::NodeStatus tick() override;
+
+    double distance_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

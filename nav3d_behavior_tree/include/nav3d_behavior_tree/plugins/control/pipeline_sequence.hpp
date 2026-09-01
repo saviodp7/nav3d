@@ -1,31 +1,26 @@
 #pragma once
 
-#include <string>
-
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/control_node.h"
 
-namespace nav3d_behavior_tree
-{
+#include <string>
 
-class PipelineSequence : public BT::ControlNode
-{
-public:
-  explicit PipelineSequence(const std::string & name);
+namespace nav3d_behavior_tree {
 
-  PipelineSequence(const std::string & name, const BT::NodeConfiguration & config);
+class PipelineSequence : public BT::ControlNode {
+  public:
+    explicit PipelineSequence(const std::string& name);
 
-  void halt() override;
+    PipelineSequence(const std::string& name, const BT::NodeConfiguration& config);
 
-  static BT::PortsList providedPorts()
-  {
-    return {};
-  }
+    void halt() override;
 
-protected:
-  BT::NodeStatus tick() override;
+    static BT::PortsList providedPorts() { return {}; }
 
-  std::size_t last_child_ticked_ = 0;
+  protected:
+    BT::NodeStatus tick() override;
+
+    std::size_t last_child_ticked_ = 0;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

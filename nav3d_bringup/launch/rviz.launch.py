@@ -10,34 +10,33 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description() -> LaunchDescription:
-    bringup_dir = get_package_share_directory('nav3d_bringup')
+    bringup_dir = get_package_share_directory("nav3d_bringup")
 
-    rviz_config_file = LaunchConfiguration('rviz_config')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    rviz_config_file = LaunchConfiguration("rviz_config")
+    use_sim_time = LaunchConfiguration("use_sim_time")
 
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
-        'rviz_config',
-        default_value=os.path.join(bringup_dir, 'rviz', 'nav3d.rviz'),
-        description='Full path to the RVIZ config file to use',
+        "rviz_config",
+        default_value=os.path.join(bringup_dir, "rviz", "nav3d.rviz"),
+        description="Full path to the RVIZ config file to use",
     )
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='True',
-        description='Use simulation (Gazebo) clock if true')
+        "use_sim_time", default_value="True", description="Use simulation (Gazebo) clock if true"
+    )
 
     start_rviz_cmd = Node(
-        package='rviz2',
-        executable='rviz2',
-        arguments=['-d', rviz_config_file, '--ros-args', '--log-level', 'warn'],
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
+        package="rviz2",
+        executable="rviz2",
+        arguments=["-d", rviz_config_file, "--ros-args", "--log-level", "warn"],
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
     )
 
     exit_event_handler = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=start_rviz_cmd,
-            on_exit=EmitEvent(event=Shutdown(reason='rviz exited')),
+            on_exit=EmitEvent(event=Shutdown(reason="rviz exited")),
         ),
     )
 

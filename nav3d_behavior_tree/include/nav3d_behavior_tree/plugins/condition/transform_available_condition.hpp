@@ -1,47 +1,40 @@
 #pragma once
 
-#include <atomic>
-#include <memory>
-#include <string>
-
 #include "behaviortree_cpp/condition_node.h"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/buffer.h"
 
-namespace nav3d_behavior_tree
-{
+#include <atomic>
+#include <memory>
+#include <string>
 
-class TransformAvailableCondition : public BT::ConditionNode
-{
-public:
-  TransformAvailableCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  TransformAvailableCondition() = delete;
+class TransformAvailableCondition : public BT::ConditionNode {
+  public:
+    TransformAvailableCondition(const std::string& condition_name, const BT::NodeConfiguration& conf);
 
-  ~TransformAvailableCondition() override;
+    TransformAvailableCondition() = delete;
 
-  BT::NodeStatus tick() override;
+    ~TransformAvailableCondition() override;
 
-  void initialize();
+    BT::NodeStatus tick() override;
 
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<std::string>("child", std::string(), "Child frame for transform"),
-      BT::InputPort<std::string>("parent", std::string(), "parent frame for transform")
-    };
-  }
+    void initialize();
 
-private:
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+    static BT::PortsList providedPorts() {
+        return {BT::InputPort<std::string>("child", std::string(), "Child frame for transform"),
+                BT::InputPort<std::string>("parent", std::string(), "parent frame for transform")};
+    }
 
-  std::atomic<bool> was_found_;
+  private:
+    rclcpp::Node::SharedPtr node_;
+    std::shared_ptr<tf2_ros::Buffer> tf_;
 
-  std::string child_frame_;
-  std::string parent_frame_;
+    std::atomic<bool> was_found_;
+
+    std::string child_frame_;
+    std::string parent_frame_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

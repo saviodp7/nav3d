@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "nav3d_behavior_tree/bt_utils.hpp"
@@ -10,46 +7,42 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/buffer.h"
 
-namespace nav3d_behavior_tree
-{
+#include <memory>
+#include <string>
 
-class GoalReachedCondition : public BT::ConditionNode
-{
-public:
-  GoalReachedCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  GoalReachedCondition() = delete;
+class GoalReachedCondition : public BT::ConditionNode {
+  public:
+    GoalReachedCondition(const std::string& condition_name, const BT::NodeConfiguration& conf);
 
-  ~GoalReachedCondition() override;
+    GoalReachedCondition() = delete;
 
-  BT::NodeStatus tick() override;
+    ~GoalReachedCondition() override;
 
-  void initialize();
+    BT::NodeStatus tick() override;
 
-  bool isGoalReached();
+    void initialize();
 
-  static BT::PortsList providedPorts()
-  {
-    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+    bool isGoalReached();
 
-    return {
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
-      BT::InputPort<std::string>("robot_base_frame", "Robot base frame")
-    };
-  }
+    static BT::PortsList providedPorts() {
+        BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
 
-protected:
-  void cleanup() {}
+        return {BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination"),
+                BT::InputPort<std::string>("robot_base_frame", "Robot base frame")};
+    }
 
-private:
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
+  protected:
+    void cleanup() {}
 
-  double goal_reached_tol_;
-  double transform_tolerance_;
-  std::string robot_base_frame_;
+  private:
+    rclcpp::Node::SharedPtr node_;
+    std::shared_ptr<tf2_ros::Buffer> tf_;
+
+    double goal_reached_tol_;
+    double transform_tolerance_;
+    std::string robot_base_frame_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

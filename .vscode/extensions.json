@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "xaver.clang-format",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "cheshirekow.cmake-format",
+    "dotjoshjohnson.xml",
+    "redhat.vscode-yaml"
+  ]
+}

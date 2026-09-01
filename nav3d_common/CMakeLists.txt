@@ -7,11 +7,6 @@ find_package(ament_cmake_python REQUIRED)
 
 ament_python_install_package(nav3d_common)
 
-ament_package(
-  CONFIG_EXTRAS "nav3d_common-extras.cmake"
-)
+ament_package(CONFIG_EXTRAS "nav3d_common-extras.cmake")
 
-install(
-  DIRECTORY cmake
-  DESTINATION share/${PROJECT_NAME}
-)
+install(DIRECTORY cmake DESTINATION share/${PROJECT_NAME})

@@ -1,32 +1,27 @@
 #pragma once
 
-#include <string>
-
 #include "behaviortree_cpp/bt_factory.h"
 #include "behaviortree_cpp/control_node.h"
 
-namespace nav3d_behavior_tree
-{
+#include <string>
 
-class RoundRobinNode : public BT::ControlNode
-{
-public:
-  explicit RoundRobinNode(const std::string & name);
+namespace nav3d_behavior_tree {
 
-  RoundRobinNode(const std::string & name, const BT::NodeConfiguration & config);
+class RoundRobinNode : public BT::ControlNode {
+  public:
+    explicit RoundRobinNode(const std::string& name);
 
-  BT::NodeStatus tick() override;
+    RoundRobinNode(const std::string& name, const BT::NodeConfiguration& config);
 
-  void halt() override;
+    BT::NodeStatus tick() override;
 
-  static BT::PortsList providedPorts()
-  {
-    return {};
-  }
+    void halt() override;
 
-private:
-  unsigned int current_child_idx_{0};
-  unsigned int num_failed_children_{0};
+    static BT::PortsList providedPorts() { return {}; }
+
+  private:
+    unsigned int current_child_idx_{0};
+    unsigned int num_failed_children_{0};
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

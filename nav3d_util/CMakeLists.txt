@@ -26,27 +26,25 @@ set(library_name ${PROJECT_NAME}_core)
 
 add_subdirectory(src)
 
-install(DIRECTORY include/
-  DESTINATION include/${PROJECT_NAME}
-)
+install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
 ament_export_include_directories(include/${PROJECT_NAME})
 ament_export_libraries(${library_name})
 ament_export_dependencies(
-  bondcpp
-  geometry_msgs
-  lifecycle_msgs
-  nav3d_msgs
-  nav_msgs
-  rcl_interfaces
-  rclcpp
-  rclcpp_action
-  rclcpp_lifecycle
-  std_msgs
-  tf2
-  tf2_geometry_msgs
-  tf2_ros
-  pluginlib
+    bondcpp
+    geometry_msgs
+    lifecycle_msgs
+    nav3d_msgs
+    nav_msgs
+    rcl_interfaces
+    rclcpp
+    rclcpp_action
+    rclcpp_lifecycle
+    std_msgs
+    tf2
+    tf2_geometry_msgs
+    tf2_ros
+    pluginlib
 )
 ament_export_targets(export_${library_name})
 

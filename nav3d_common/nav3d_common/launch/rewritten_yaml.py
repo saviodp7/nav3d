@@ -34,18 +34,12 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
         from launch.utilities import normalize_to_list_of_substitutions
 
         self._source_file = normalize_to_list_of_substitutions(source_file)
-        self._param_rewrites = {
-            k: normalize_to_list_of_substitutions(v) for k, v in param_rewrites.items()
-        }
+        self._param_rewrites = {k: normalize_to_list_of_substitutions(v) for k, v in param_rewrites.items()}
         self._key_rewrites = (
-            {k: normalize_to_list_of_substitutions(v) for k, v in key_rewrites.items()}
-            if key_rewrites
-            else {}
+            {k: normalize_to_list_of_substitutions(v) for k, v in key_rewrites.items()} if key_rewrites else {}
         )
         self._value_rewrites = (
-            {k: normalize_to_list_of_substitutions(v) for k, v in value_rewrites.items()}
-            if value_rewrites
-            else {}
+            {k: normalize_to_list_of_substitutions(v) for k, v in value_rewrites.items()} if value_rewrites else {}
         )
         self._convert_types = convert_types
         self._root_key = normalize_to_list_of_substitutions(root_key) if root_key else None
@@ -77,9 +71,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             yaml.safe_dump(data, out, default_flow_style=False)
             return out.name
 
-    def _resolve_rewrites(
-        self, context: launch.LaunchContext
-    ) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    def _resolve_rewrites(self, context: launch.LaunchContext) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
         def resolve_map(
             m: dict[str, list[launch.Substitution]],
         ) -> dict[str, str]:
@@ -190,9 +182,7 @@ class RewrittenYaml(launch.Substitution):  # type: ignore[misc]
             if is_last:
                 node[idx] = rewrite_val
                 return node
-            node[idx] = self._update_yaml_path_vals(
-                node[idx], tail, rewrite_val
-            )
+            node[idx] = self._update_yaml_path_vals(node[idx], tail, rewrite_val)
             return node
 
         if is_last:

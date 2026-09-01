@@ -1,9 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <string>
-#include <thread>
-
 #include "bond/msg/constants.hpp"
 #include "bondcpp/bond.hpp"
 #include "nav3d_util/node_thread.hpp"
@@ -11,129 +7,106 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
-namespace nav3d_util
-{
+#include <memory>
+#include <string>
+#include <thread>
 
-using CallbackReturn =
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+namespace nav3d_util {
 
-class LifecycleNode : public rclcpp_lifecycle::LifecycleNode
-{
-public:
-  LifecycleNode(
-    const std::string & node_name,
-    const std::string & ns = "",
-    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-  ~LifecycleNode() override;
+class LifecycleNode : public rclcpp_lifecycle::LifecycleNode {
+  public:
+    LifecycleNode(const std::string& node_name, const std::string& ns = "",
+                  const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
-  struct FloatingPointRange
-  {
-    double from_value;
-    double to_value;
-    double step;
-  };
+    ~LifecycleNode() override;
 
-  struct IntegerRange
-  {
-    int from_value;
-    int to_value;
-    int step;
-  };
+    struct FloatingPointRange {
+        double from_value;
+        double to_value;
+        double step;
+    };
 
-  void add_parameter(
-    const std::string & name,
-    const rclcpp::ParameterValue & default_value,
-    const std::string & description = "",
-    const std::string & additional_constraints = "",
-    bool read_only = false)
-  {
-    rcl_interfaces::msg::ParameterDescriptor descriptor;
-    descriptor.name = name;
-    descriptor.description = description;
-    descriptor.additional_constraints = additional_constraints;
-    descriptor.read_only = read_only;
+    struct IntegerRange {
+        int from_value;
+        int to_value;
+        int step;
+    };
 
-    declare_parameter(descriptor.name, default_value, descriptor);
-  }
+    void add_parameter(const std::string& name, const rclcpp::ParameterValue& default_value,
+                       const std::string& description = "", const std::string& additional_constraints = "",
+                       bool read_only = false) {
+        rcl_interfaces::msg::ParameterDescriptor descriptor;
+        descriptor.name = name;
+        descriptor.description = description;
+        descriptor.additional_constraints = additional_constraints;
+        descriptor.read_only = read_only;
 
-  void add_parameter(
-    const std::string & name,
-    const rclcpp::ParameterValue & default_value,
-    const FloatingPointRange fp_range,
-    const std::string & description = "",
-    const std::string & additional_constraints = "",
-    bool read_only = false)
-  {
-    rcl_interfaces::msg::ParameterDescriptor descriptor;
-    descriptor.name = name;
-    descriptor.description = description;
-    descriptor.additional_constraints = additional_constraints;
-    descriptor.read_only = read_only;
+        declare_parameter(descriptor.name, default_value, descriptor);
+    }
 
-    descriptor.floating_point_range.resize(1);
-    descriptor.floating_point_range[0].from_value = fp_range.from_value;
-    descriptor.floating_point_range[0].to_value = fp_range.to_value;
-    descriptor.floating_point_range[0].step = fp_range.step;
+    void add_parameter(const std::string& name, const rclcpp::ParameterValue& default_value,
+                       const FloatingPointRange fp_range, const std::string& description = "",
+                       const std::string& additional_constraints = "", bool read_only = false) {
+        rcl_interfaces::msg::ParameterDescriptor descriptor;
+        descriptor.name = name;
+        descriptor.description = description;
+        descriptor.additional_constraints = additional_constraints;
+        descriptor.read_only = read_only;
 
-    declare_parameter(descriptor.name, default_value, descriptor);
-  }
+        descriptor.floating_point_range.resize(1);
+        descriptor.floating_point_range[0].from_value = fp_range.from_value;
+        descriptor.floating_point_range[0].to_value = fp_range.to_value;
+        descriptor.floating_point_range[0].step = fp_range.step;
 
-  void add_parameter(
-    const std::string & name,
-    const rclcpp::ParameterValue & default_value,
-    const IntegerRange int_range,
-    const std::string & description = "",
-    const std::string & additional_constraints = "",
-    bool read_only = false)
-  {
-    rcl_interfaces::msg::ParameterDescriptor descriptor;
-    descriptor.name = name;
-    descriptor.description = description;
-    descriptor.additional_constraints = additional_constraints;
-    descriptor.read_only = read_only;
+        declare_parameter(descriptor.name, default_value, descriptor);
+    }
 
-    descriptor.integer_range.resize(1);
-    descriptor.integer_range[0].from_value = int_range.from_value;
-    descriptor.integer_range[0].to_value = int_range.to_value;
-    descriptor.integer_range[0].step = int_range.step;
+    void add_parameter(const std::string& name, const rclcpp::ParameterValue& default_value,
+                       const IntegerRange int_range, const std::string& description = "",
+                       const std::string& additional_constraints = "", bool read_only = false) {
+        rcl_interfaces::msg::ParameterDescriptor descriptor;
+        descriptor.name = name;
+        descriptor.description = description;
+        descriptor.additional_constraints = additional_constraints;
+        descriptor.read_only = read_only;
 
-    declare_parameter(descriptor.name, default_value, descriptor);
-  }
+        descriptor.integer_range.resize(1);
+        descriptor.integer_range[0].from_value = int_range.from_value;
+        descriptor.integer_range[0].to_value = int_range.to_value;
+        descriptor.integer_range[0].step = int_range.step;
 
-  [[nodiscard]] std::shared_ptr<nav3d_util::LifecycleNode> shared_from_this()
-  {
-    return std::static_pointer_cast<nav3d_util::LifecycleNode>(
-      rclcpp_lifecycle::LifecycleNode::shared_from_this());
-  }
+        declare_parameter(descriptor.name, default_value, descriptor);
+    }
 
-  nav3d_util::CallbackReturn on_error(const rclcpp_lifecycle::State & /*state*/)
-  {
-    RCLCPP_FATAL(
-      get_logger(),
-      "Lifecycle node %s does not have error state implemented",
-      get_name());
-    return nav3d_util::CallbackReturn::SUCCESS;
-  }
+    [[nodiscard]] std::shared_ptr<nav3d_util::LifecycleNode> shared_from_this() {
+        return std::static_pointer_cast<nav3d_util::LifecycleNode>(rclcpp_lifecycle::LifecycleNode::shared_from_this());
+    }
 
-  void autostart();
+    nav3d_util::CallbackReturn on_error(const rclcpp_lifecycle::State& /*state*/) {
+        RCLCPP_FATAL(get_logger(), "Lifecycle node %s does not have error state implemented", get_name());
+        return nav3d_util::CallbackReturn::SUCCESS;
+    }
 
-  virtual void on_rcl_preshutdown();
+    void autostart();
 
-  void createBond();
-  void destroyBond();
+    virtual void on_rcl_preshutdown();
 
-protected:
-  void printLifecycleNodeNotification();
+    void createBond();
+    void destroyBond();
 
-  void register_rcl_preshutdown_callback();
-  std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
+  protected:
+    void printLifecycleNodeNotification();
 
-  void runCleanups();
+    void register_rcl_preshutdown_callback();
+    std::unique_ptr<rclcpp::PreShutdownCallbackHandle> rcl_preshutdown_cb_handle_{nullptr};
 
-  std::unique_ptr<bond::Bond> bond_{nullptr};
-  double bond_heartbeat_period;
-  rclcpp::TimerBase::SharedPtr autostart_timer_;
+    void runCleanups();
+
+    std::unique_ptr<bond::Bond> bond_{nullptr};
+    double bond_heartbeat_period;
+    rclcpp::TimerBase::SharedPtr autostart_timer_;
 };
 
-}  // namespace nav3d_util
+} // namespace nav3d_util

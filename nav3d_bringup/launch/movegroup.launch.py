@@ -8,33 +8,25 @@ from moveit_configs_utils import MoveItConfigsBuilder
 def generate_launch_description() -> LaunchDescription:
     ld = LaunchDescription()
 
-    namespace = LaunchConfiguration('namespace')
-    robot_name = LaunchConfiguration('robot_name')
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    
-    namespace_arg = DeclareLaunchArgument(
-        'namespace',
-        default_value='',
-        description='Robot namespace'
-    )
-    
+    namespace = LaunchConfiguration("namespace")
+    robot_name = LaunchConfiguration("robot_name")
+    use_sim_time = LaunchConfiguration("use_sim_time")
+
+    namespace_arg = DeclareLaunchArgument("namespace", default_value="", description="Robot namespace")
+
     robot_name_arg = DeclareLaunchArgument(
-        'robot_name',
-        default_value='x500',
-        description='Robot name for description package'
+        "robot_name", default_value="x500", description="Robot name for description package"
     )
-    
+
     use_sim_time_arg = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='True',
-        description='Use simulation (Gazebo) clock if true'
+        "use_sim_time", default_value="True", description="Use simulation (Gazebo) clock if true"
     )
-    
+
     moveit_available = False
     moveit_config = None
     try:
         moveit_config = (
-            MoveItConfigsBuilder('x500')
+            MoveItConfigsBuilder("x500")
             .robot_description(file_path="config/x500.urdf.xacro")
             .robot_description_semantic(file_path="config/x500.srdf")
             .joint_limits(file_path="config/joint_limits.yaml")
@@ -51,7 +43,7 @@ def generate_launch_description() -> LaunchDescription:
             .to_moveit_configs()
         )
         moveit_available = True
-        print("[INFO] MoveIt config loaded successfully")         
+        print("[INFO] MoveIt config loaded successfully")
     except Exception as e:
         print(f"[ERROR] MoveIt config not available: {e}")
         moveit_available = False
@@ -67,7 +59,7 @@ def generate_launch_description() -> LaunchDescription:
                 {"use_sim_time": use_sim_time},
             ],
             arguments=["--ros-args", "--log-level", "info"],
-        )   
+        )
         ld.add_action(move_group_node)
 
     ld.add_action(namespace_arg)

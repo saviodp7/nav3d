@@ -1,35 +1,26 @@
 #pragma once
 
-#include <string>
-
 #include "behaviortree_cpp/control_node.h"
 
-namespace nav3d_behavior_tree
-{
+#include <string>
 
-class RecoveryNode : public BT::ControlNode
-{
-public:
-  RecoveryNode(
-    const std::string & name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  ~RecoveryNode() override = default;
+class RecoveryNode : public BT::ControlNode {
+  public:
+    RecoveryNode(const std::string& name, const BT::NodeConfiguration& conf);
 
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<int>("number_of_retries", 1, "Number of retries")
-    };
-  }
+    ~RecoveryNode() override = default;
 
-private:
-  unsigned int current_child_idx_;
-  unsigned int number_of_retries_;
-  unsigned int retry_count_;
+    static BT::PortsList providedPorts() { return {BT::InputPort<int>("number_of_retries", 1, "Number of retries")}; }
 
-  BT::NodeStatus tick() override;
-  void halt() override;
+  private:
+    unsigned int current_child_idx_;
+    unsigned int number_of_retries_;
+    unsigned int retry_count_;
+
+    BT::NodeStatus tick() override;
+    void halt() override;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

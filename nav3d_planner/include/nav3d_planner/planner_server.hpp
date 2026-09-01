@@ -1,5 +1,19 @@
 #pragma once
 
+#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "nav3d_core/global_planner.hpp"
+#include "nav3d_core/path_validity_checker.hpp"
+#include "nav3d_core/planner_exceptions.hpp"
+#include "nav3d_msgs/action/compute_path_to_pose.hpp"
+#include "nav3d_msgs/srv/is_path_valid.hpp"
+#include "nav3d_util/lifecycle_node.hpp"
+#include "nav3d_util/simple_action_server.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "rmw/rmw.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -8,89 +22,63 @@
 #include <unordered_map>
 #include <vector>
 
-#include "rmw/rmw.h"
+namespace nav3d_planner {
 
-#include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav_msgs/msg/path.hpp"
+class PlannerServer : public nav3d_util::LifecycleNode {
+  public:
+    explicit PlannerServer(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+    ~PlannerServer() override = default;
 
-#include "nav3d_core/global_planner.hpp"
-#include "nav3d_core/path_validity_checker.hpp"
-#include "nav3d_core/planner_exceptions.hpp"
+  protected:
+    nav3d_util::CallbackReturn on_configure(const rclcpp_lifecycle::State& state) override;
+    nav3d_util::CallbackReturn on_activate(const rclcpp_lifecycle::State& state) override;
+    nav3d_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& state) override;
+    nav3d_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State& state) override;
+    nav3d_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State& state) override;
 
-#include "nav3d_msgs/action/compute_path_to_pose.hpp"
-#include "nav3d_msgs/srv/is_path_valid.hpp"
+    using ActionToPose = nav3d_msgs::action::ComputePathToPose;
+    using ActionToPoseResult = ActionToPose::Result;
+    using ActionServerToPose = nav3d_util::SimpleActionServer<ActionToPose>;
 
-#include "nav3d_util/lifecycle_node.hpp"
-#include "nav3d_util/simple_action_server.hpp"
+    template <typename T> bool isServerInactive(std::unique_ptr<nav3d_util::SimpleActionServer<T>>& action_server);
 
-#include "pluginlib/class_loader.hpp"
+    template <typename T> bool isCancelRequested(std::unique_ptr<nav3d_util::SimpleActionServer<T>>& action_server);
 
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
+    template <typename T>
+    void getPreemptedGoalIfRequested(std::unique_ptr<nav3d_util::SimpleActionServer<T>>& action_server,
+                                     typename std::shared_ptr<const typename T::Goal>& goal);
 
-namespace nav3d_planner
-{
+    void computePlan();
 
-class PlannerServer : public nav3d_util::LifecycleNode
-{
-public:
-  explicit PlannerServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
-  ~PlannerServer() override = default;
+    void publishPlan(const nav_msgs::msg::Path& path);
 
-protected:
-  nav3d_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
-  nav3d_util::CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
-  nav3d_util::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & state) override;
-  nav3d_util::CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
-  nav3d_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
+    void isPathValid(const std::shared_ptr<rmw_request_id_t> request_header,
+                     const std::shared_ptr<nav3d_msgs::srv::IsPathValid::Request> request,
+                     std::shared_ptr<nav3d_msgs::srv::IsPathValid::Response> response);
 
-  using ActionToPose = nav3d_msgs::action::ComputePathToPose;
-  using ActionToPoseResult = ActionToPose::Result;
-  using ActionServerToPose = nav3d_util::SimpleActionServer<ActionToPose>;
+  private:
+    pluginlib::ClassLoader<nav3d_core::GlobalPlanner> planner_loader_;
+    std::vector<std::string> planner_ids_;
+    std::unordered_map<std::string, nav3d_core::GlobalPlanner::Ptr> planners_;
 
-  template<typename T>
-  bool isServerInactive(std::unique_ptr<nav3d_util::SimpleActionServer<T>> & action_server);
+    std::unique_ptr<ActionServerToPose> action_server_pose_;
 
-  template<typename T>
-  bool isCancelRequested(std::unique_ptr<nav3d_util::SimpleActionServer<T>> & action_server);
+    std::shared_ptr<tf2_ros::Buffer> tf_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  template<typename T>
-  void getPreemptedGoalIfRequested(
-    std::unique_ptr<nav3d_util::SimpleActionServer<T>> & action_server,
-    typename std::shared_ptr<const typename T::Goal> & goal);
+    rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
 
-  void computePlan();
+    rclcpp::Service<nav3d_msgs::srv::IsPathValid>::SharedPtr is_path_valid_srv_;
 
-  void publishPlan(const nav_msgs::msg::Path & path);
+    std::string global_frame_{"map"};
+    std::string robot_base_frame_{"base_link"};
+    double transform_tolerance_{0.1};
 
-  void isPathValid(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav3d_msgs::srv::IsPathValid::Request> request,
-    std::shared_ptr<nav3d_msgs::srv::IsPathValid::Response> response);
+    double expected_planner_frequency_{1.0};
+    std::string path_validity_planner_id_{};
+    double action_server_result_timeout_{10.0};
 
-private:
-  pluginlib::ClassLoader<nav3d_core::GlobalPlanner> planner_loader_;
-  std::vector<std::string> planner_ids_;
-  std::unordered_map<std::string, nav3d_core::GlobalPlanner::Ptr> planners_;
-
-  std::unique_ptr<ActionServerToPose> action_server_pose_;
-
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr plan_publisher_;
-
-  rclcpp::Service<nav3d_msgs::srv::IsPathValid>::SharedPtr is_path_valid_srv_;
-
-  std::string global_frame_{"map"};
-  std::string robot_base_frame_{"base_link"};
-  double transform_tolerance_{0.1};
-
-  double expected_planner_frequency_{1.0};
-  std::string path_validity_planner_id_{};
-  double action_server_result_timeout_{10.0};
-
-  nav3d_core::GlobalPlanner::Ptr getPlannerOrThrow(const std::string & planner_id);
+    nav3d_core::GlobalPlanner::Ptr getPlannerOrThrow(const std::string& planner_id);
 };
 
-}  // namespace nav3d_planner
+} // namespace nav3d_planner

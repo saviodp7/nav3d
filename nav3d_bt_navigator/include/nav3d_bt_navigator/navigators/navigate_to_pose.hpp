@@ -1,65 +1,59 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav3d_core/behavior_tree_navigator.hpp"
 #include "nav3d_msgs/action/navigate_to_pose.hpp"
 #include "nav3d_util/geometry_utils.hpp"
+#include "nav3d_util/odometry_utils.hpp"
 #include "nav3d_util/robot_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav3d_util/odometry_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
-namespace nav3d_bt_navigator
-{
+#include <memory>
+#include <string>
+#include <vector>
 
-class NavigateToPoseNavigator
-  : public nav3d_core::BehaviorTreeNavigator<nav3d_msgs::action::NavigateToPose>
-{
-public:
-  using ActionT = nav3d_msgs::action::NavigateToPose;
+namespace nav3d_bt_navigator {
 
-  NavigateToPoseNavigator()
-  : BehaviorTreeNavigator() {}
+class NavigateToPoseNavigator : public nav3d_core::BehaviorTreeNavigator<nav3d_msgs::action::NavigateToPose> {
+  public:
+    using ActionT = nav3d_msgs::action::NavigateToPose;
 
-  bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr node,
-    std::shared_ptr<nav3d_util::OdomSmoother> odom_smoother) override;
+    NavigateToPoseNavigator() : BehaviorTreeNavigator() {}
 
-  bool cleanup() override;
+    bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr node,
+                   std::shared_ptr<nav3d_util::OdomSmoother> odom_smoother) override;
 
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+    bool cleanup() override;
 
-  std::string getName() override {return std::string("navigate_to_pose");}
+    void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
-  std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
+    std::string getName() override { return std::string("navigate_to_pose"); }
 
-protected:
-  bool goalReceived(ActionT::Goal::ConstSharedPtr goal) override;
+    std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
-  void onLoop() override;
+  protected:
+    bool goalReceived(ActionT::Goal::ConstSharedPtr goal) override;
 
-  void onPreempt(ActionT::Goal::ConstSharedPtr goal) override;
+    void onLoop() override;
 
-  void goalCompleted(
-    typename ActionT::Result::SharedPtr result,
-    const nav3d_behavior_tree::BtStatus final_bt_status) override;
+    void onPreempt(ActionT::Goal::ConstSharedPtr goal) override;
 
-  bool initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
+    void goalCompleted(typename ActionT::Result::SharedPtr result,
+                       const nav3d_behavior_tree::BtStatus final_bt_status) override;
 
-  rclcpp::Time start_time_;
+    bool initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp_action::Client<ActionT>::SharedPtr self_client_;
+    rclcpp::Time start_time_;
 
-  std::string goal_blackboard_id_;
-  std::string path_blackboard_id_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+    rclcpp_action::Client<ActionT>::SharedPtr self_client_;
 
-  std::shared_ptr<nav3d_util::OdomSmoother> odom_smoother_;
+    std::string goal_blackboard_id_;
+    std::string path_blackboard_id_;
+
+    std::shared_ptr<nav3d_util::OdomSmoother> odom_smoother_;
 };
 
-}  // namespace nav3d_bt_navigator
+} // namespace nav3d_bt_navigator

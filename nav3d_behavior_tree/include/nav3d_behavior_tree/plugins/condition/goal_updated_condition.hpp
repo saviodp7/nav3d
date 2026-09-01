@@ -1,44 +1,37 @@
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "nav3d_behavior_tree/bt_utils.hpp"
 #include "nav3d_behavior_tree/json_utils.hpp"
 #include "nav_msgs/msg/goals.hpp"
 
-namespace nav3d_behavior_tree
-{
+#include <string>
+#include <vector>
 
-class GoalUpdatedCondition : public BT::ConditionNode
-{
-public:
-  GoalUpdatedCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  GoalUpdatedCondition() = delete;
+class GoalUpdatedCondition : public BT::ConditionNode {
+  public:
+    GoalUpdatedCondition(const std::string& condition_name, const BT::NodeConfiguration& conf);
 
-  BT::NodeStatus tick() override;
+    GoalUpdatedCondition() = delete;
 
-  static BT::PortsList providedPorts()
-  {
-    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
-    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+    BT::NodeStatus tick() override;
 
-    return {
-      BT::InputPort<nav_msgs::msg::Goals>(
-        "goals", "Vector of navigation goals"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>(
-        "goal", "Navigation goal"),
-    };
-  }
+    static BT::PortsList providedPorts() {
+        BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+        BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
 
-private:
-  geometry_msgs::msg::PoseStamped goal_;
-  nav_msgs::msg::Goals goals_;
+        return {
+            BT::InputPort<nav_msgs::msg::Goals>("goals", "Vector of navigation goals"),
+            BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Navigation goal"),
+        };
+    }
+
+  private:
+    geometry_msgs::msg::PoseStamped goal_;
+    nav_msgs::msg::Goals goals_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

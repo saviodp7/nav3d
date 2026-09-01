@@ -1,58 +1,51 @@
 #pragma once
 
+#include "behaviortree_cpp/condition_node.h"
+#include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/rclcpp.hpp"
+
 #include <atomic>
 #include <deque>
 #include <string>
 #include <thread>
 
-#include "behaviortree_cpp/condition_node.h"
-#include "nav_msgs/msg/odometry.hpp"
-#include "rclcpp/rclcpp.hpp"
+namespace nav3d_behavior_tree {
 
-namespace nav3d_behavior_tree
-{
+class IsStuckCondition : public BT::ConditionNode {
+  public:
+    IsStuckCondition(const std::string& condition_name, const BT::NodeConfiguration& conf);
 
-class IsStuckCondition : public BT::ConditionNode
-{
-public:
-  IsStuckCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+    IsStuckCondition() = delete;
 
-  IsStuckCondition() = delete;
+    ~IsStuckCondition() override;
 
-  ~IsStuckCondition() override;
+    void onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg);
 
-  void onOdomReceived(const nav_msgs::msg::Odometry::SharedPtr msg);
+    BT::NodeStatus tick() override;
 
-  BT::NodeStatus tick() override;
+    void logStuck(const std::string& msg) const;
 
-  void logStuck(const std::string & msg) const;
+    void updateStates();
 
-  void updateStates();
+    bool isStuck();
 
-  bool isStuck();
+    static BT::PortsList providedPorts() { return {}; }
 
-  static BT::PortsList providedPorts()
-  {
-    return {};
-  }
+  private:
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::CallbackGroup::SharedPtr callback_group_;
+    rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
+    std::thread callback_group_executor_thread;
 
-private:
-  rclcpp::Node::SharedPtr node_;
-  rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp::executors::SingleThreadedExecutor callback_group_executor_;
-  std::thread callback_group_executor_thread;
+    std::atomic<bool> is_stuck_;
 
-  std::atomic<bool> is_stuck_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    std::deque<nav_msgs::msg::Odometry> odom_history_;
+    std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
 
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-  std::deque<nav_msgs::msg::Odometry> odom_history_;
-  std::deque<nav_msgs::msg::Odometry>::size_type odom_history_size_;
+    double current_accel_;
 
-  double current_accel_;
-
-  double brake_accel_limit_;
+    double brake_accel_limit_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

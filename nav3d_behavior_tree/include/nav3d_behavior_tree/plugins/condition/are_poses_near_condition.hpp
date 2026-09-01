@@ -1,46 +1,39 @@
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include "behaviortree_cpp/condition_node.h"
 #include "nav3d_behavior_tree/bt_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/buffer.h"
 
-namespace nav3d_behavior_tree
-{
+#include <memory>
+#include <string>
 
-class ArePosesNearCondition : public BT::ConditionNode
-{
-public:
-  ArePosesNearCondition(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  ~ArePosesNearCondition() override = default;
+class ArePosesNearCondition : public BT::ConditionNode {
+  public:
+    ArePosesNearCondition(const std::string& condition_name, const BT::NodeConfiguration& conf);
 
-  BT::NodeStatus tick() override;
+    ~ArePosesNearCondition() override = default;
 
-  void initialize();
+    BT::NodeStatus tick() override;
 
-  bool arePosesNearby();
+    void initialize();
 
-  static BT::PortsList providedPorts()
-  {
-    return {
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("ref_pose", "Destination"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>("target_pose", "Destination"),
-      BT::InputPort<std::string>("global_frame", "Global frame"),
-      BT::InputPort<double>("tolerance", 0.5, "Tolerance")
-    };
-  }
+    bool arePosesNearby();
 
-private:
-  rclcpp::Node::SharedPtr node_;
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  double transform_tolerance_;
-  std::string global_frame_;
+    static BT::PortsList providedPorts() {
+        return {BT::InputPort<geometry_msgs::msg::PoseStamped>("ref_pose", "Destination"),
+                BT::InputPort<geometry_msgs::msg::PoseStamped>("target_pose", "Destination"),
+                BT::InputPort<std::string>("global_frame", "Global frame"),
+                BT::InputPort<double>("tolerance", 0.5, "Tolerance")};
+    }
+
+  private:
+    rclcpp::Node::SharedPtr node_;
+    std::shared_ptr<tf2_ros::Buffer> tf_;
+    double transform_tolerance_;
+    std::string global_frame_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

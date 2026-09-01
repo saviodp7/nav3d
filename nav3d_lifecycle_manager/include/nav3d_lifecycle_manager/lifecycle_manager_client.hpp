@@ -1,47 +1,41 @@
 #pragma once
 
-#include <chrono>
-#include <memory>
-#include <string>
-
 #include "nav3d_msgs/srv/manage_lifecycle_nodes.hpp"
 #include "nav3d_util/service_client.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
-namespace nav3d_lifecycle_manager
-{
+#include <chrono>
+#include <memory>
+#include <string>
 
-enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
+namespace nav3d_lifecycle_manager {
 
-class LifecycleManagerClient
-{
-public:
-  explicit LifecycleManagerClient(
-    const std::string & name,
-    std::shared_ptr<rclcpp::Node> parent_node);
+enum class SystemStatus { ACTIVE, INACTIVE, TIMEOUT };
 
-  bool startup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
-  bool shutdown(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
-  bool pause(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
-  bool resume(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
-  bool reset(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+class LifecycleManagerClient {
+  public:
+    explicit LifecycleManagerClient(const std::string& name, std::shared_ptr<rclcpp::Node> parent_node);
 
-  SystemStatus is_active(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+    bool startup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+    bool shutdown(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+    bool pause(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+    bool resume(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+    bool reset(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
-protected:
-  using ManageLifecycleNodes = nav3d_msgs::srv::ManageLifecycleNodes;
+    SystemStatus is_active(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
-  bool callService(
-    uint8_t command,
-    const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
+  protected:
+    using ManageLifecycleNodes = nav3d_msgs::srv::ManageLifecycleNodes;
 
-  rclcpp::Node::SharedPtr node_;
+    bool callService(uint8_t command, const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
-  std::shared_ptr<nav3d_util::ServiceClient<ManageLifecycleNodes>> manager_client_;
-  std::shared_ptr<nav3d_util::ServiceClient<std_srvs::srv::Trigger>> is_active_client_;
-  std::string manage_service_name_;
-  std::string active_service_name_;
+    rclcpp::Node::SharedPtr node_;
+
+    std::shared_ptr<nav3d_util::ServiceClient<ManageLifecycleNodes>> manager_client_;
+    std::shared_ptr<nav3d_util::ServiceClient<std_srvs::srv::Trigger>> is_active_client_;
+    std::string manage_service_name_;
+    std::string active_service_name_;
 };
 
-}  // namespace nav3d_lifecycle_manager
+} // namespace nav3d_lifecycle_manager

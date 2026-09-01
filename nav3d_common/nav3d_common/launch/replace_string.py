@@ -12,10 +12,9 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
     ) -> None:
         super().__init__()
         from launch.utilities import normalize_to_list_of_substitutions
+
         self._source_file = normalize_to_list_of_substitutions(source_file)
-        self._replacements = {
-            k: normalize_to_list_of_substitutions(v) for k, v in replacements.items()
-        }
+        self._replacements = {k: normalize_to_list_of_substitutions(v) for k, v in replacements.items()}
         self._condition = condition
 
     def describe(self) -> str:
@@ -27,14 +26,9 @@ class ReplaceString(launch.Substitution):  # type: ignore[misc]
         if self._condition is not None and not self._condition.evaluate(context):
             return source_path
 
-        resolved = {
-            k: launch.utilities.perform_substitutions(context, v)
-            for k, v in self._replacements.items()
-        }
+        resolved = {k: launch.utilities.perform_substitutions(context, v) for k, v in self._replacements.items()}
 
-        with open(source_path) as in_f, tempfile.NamedTemporaryFile(
-            mode="w", delete=False
-        ) as out_f:
+        with open(source_path) as in_f, tempfile.NamedTemporaryFile(mode="w", delete=False) as out_f:
             for line in in_f:
                 for key, value in resolved.items():
                     line = line.replace(key, value)

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <chrono>
-#include <string>
-#include <vector>
-
 #include "behaviortree_cpp/decorator_node.h"
 #include "behaviortree_cpp/json_export.h"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -11,35 +7,32 @@
 #include "nav3d_behavior_tree/json_utils.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace nav3d_behavior_tree
-{
+#include <chrono>
+#include <string>
+#include <vector>
 
-class GoalUpdatedController : public BT::DecoratorNode
-{
-public:
-  GoalUpdatedController(
-    const std::string & name,
-    const BT::NodeConfiguration & conf);
+namespace nav3d_behavior_tree {
 
-  static BT::PortsList providedPorts()
-  {
-    BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
-    BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
+class GoalUpdatedController : public BT::DecoratorNode {
+  public:
+    GoalUpdatedController(const std::string& name, const BT::NodeConfiguration& conf);
 
-    return {
-      BT::InputPort<nav_msgs::msg::Goals>(
-        "goals", "Vector of navigation goals"),
-      BT::InputPort<geometry_msgs::msg::PoseStamped>(
-        "goal", "Navigation goal"),
-    };
-  }
+    static BT::PortsList providedPorts() {
+        BT::RegisterJsonDefinition<geometry_msgs::msg::PoseStamped>();
+        BT::RegisterJsonDefinition<nav_msgs::msg::Goals>();
 
-private:
-  BT::NodeStatus tick() override;
+        return {
+            BT::InputPort<nav_msgs::msg::Goals>("goals", "Vector of navigation goals"),
+            BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Navigation goal"),
+        };
+    }
 
-  bool goal_was_updated_;
-  geometry_msgs::msg::PoseStamped goal_;
-  nav_msgs::msg::Goals goals_;
+  private:
+    BT::NodeStatus tick() override;
+
+    bool goal_was_updated_;
+    geometry_msgs::msg::PoseStamped goal_;
+    nav_msgs::msg::Goals goals_;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree

@@ -1,24 +1,20 @@
 #pragma once
 
-#include <string>
-
 #include "nav3d_behavior_tree/plugins/condition/are_error_codes_present_condition.hpp"
 #include "nav3d_msgs/action/follow_path.hpp"
 
-namespace nav3d_behavior_tree
-{
+#include <string>
 
-class WouldAControllerRecoveryHelp : public AreErrorCodesPresent
-{
-  using Action = nav3d_msgs::action::FollowPath;
-  using ActionResult = Action::Result;
+namespace nav3d_behavior_tree {
 
-public:
-  WouldAControllerRecoveryHelp(
-    const std::string & condition_name,
-    const BT::NodeConfiguration & conf);
+class WouldAControllerRecoveryHelp : public AreErrorCodesPresent {
+    using Action = nav3d_msgs::action::FollowPath;
+    using ActionResult = Action::Result;
 
-  WouldAControllerRecoveryHelp() = delete;
+  public:
+    WouldAControllerRecoveryHelp(const std::string& condition_name, const BT::NodeConfiguration& conf);
+
+    WouldAControllerRecoveryHelp() = delete;
 };
 
-}  // namespace nav3d_behavior_tree
+} // namespace nav3d_behavior_tree
