@@ -39,13 +39,6 @@ jobs:
         with:
           required-ros-distributions: humble
 
-      - name: Fix BehaviorTree.CPP library path
-        shell: bash
-        run: |
-          BT_MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
-          ln -snf "${BT_MULTIARCH}/libbehaviortree_cpp.so" \
-            /opt/ros/humble/lib/libbehaviortree_cpp.so
-
       - name: Install dependencies, build, and test
         id: ros_ci
         uses: ros-tooling/action-ros-ci@v0.4
@@ -89,5 +82,74 @@ jobs:
         with:
           name: colcon-logs
           path: ros_ws/log
+          if-no-files-found: warn
+          retention-days: 14
+
+  takeoff-test:
+    name: Takeoff test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out Nav3D pull request
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check out simulation workspace
+        uses: actions/checkout@v7
+        with:
+          repository: saviodp7/nav3d_sim
+          ref: main
+          path: nav3d_sim
+          persist-credentials: false
+
+      - name: Check out Nav3D pull request into simulation workspace
+        uses: actions/checkout@v7
+        with:
+          path: nav3d_sim/ros2_ws/src/nav3d
+          persist-credentials: false
+
+      - name: Check out drone description and MoveIt configuration
+        uses: actions/checkout@v7
+        with:
+          repository: saviodp7/x500_nav3d
+          ref: a0c1bc3f2dca0969fbdbf9249a0bae93fa025b88
+          path: nav3d_sim/ros2_ws/src/x500_nav3d
+          persist-credentials: false
+
+      - name: Verify the Nav3D revision under test
+        shell: bash
+        run: |
+          test "$(git -C nav3d_sim/ros2_ws/src/nav3d rev-parse HEAD)" = "$(git rev-parse HEAD)"
+
+      - name: Build simulation image
+        shell: bash
+        run: docker build --tag nav3d-ci --file nav3d_sim/docker/Dockerfile nav3d_sim
+
+      - name: Run automatic takeoff in the default world
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p nav3d_sim/ros2_ws/log/system_tests
+          docker run --rm --shm-size=1g \
+            --env LIBGL_ALWAYS_SOFTWARE=1 \
+            --env EGL_PLATFORM=surfaceless \
+            --volume "${GITHUB_WORKSPACE}/nav3d_sim:/workspaces/nav3d_sim" \
+            --workdir /workspaces/nav3d_sim \
+            nav3d-ci \
+            bash /workspaces/nav3d_sim/ros2_ws/src/nav3d/.github/scripts/run_takeoff_baseline.sh \
+            2>&1 | tee nav3d_sim/ros2_ws/log/system_tests/takeoff_test_ci.log
+
+      - name: Upload report and logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: takeoff-test
+          path: |
+            nav3d_sim/ros2_ws/log/system_tests/takeoff_test_ci.json
+            nav3d_sim/ros2_ws/log/system_tests/takeoff_test_ci.log
+            nav3d_sim/ros2_ws/log/system_tests/ros_logs/
+            nav3d_sim/PX4-Autopilot/build/px4_sitl_default/src/modules/simulation/gz_bridge/log/**/*.ulg
           if-no-files-found: warn
           retention-days: 14
