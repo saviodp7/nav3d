@@ -1,6 +1,9 @@
-name: ROS 2 CI
+name: NAV3D CI
 
 on:
+  push:
+    branches:
+      - '**'
   pull_request:
     branches:
       - main
