@@ -56,7 +56,7 @@ jobs:
             nav3d_controller
             nav3d_bt_navigator
             nav3d_lifecycle_manager
-            nav3d_px4_bridge
+            nav3d_px4_adapter
             nav3d_gz_bridge
             nav3d_bringup
           vcs-repo-file-url: ${{ steps.dependency_manifest.outputs.url }}

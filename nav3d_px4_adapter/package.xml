@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>nav3d_px4_bridge</name>
+  <name>nav3d_px4_adapter</name>
   <version>0.1.0</version>
-  <description>PX4 bridge for VIO/odometry and TF</description>
+  <description>PX4 integration for offboard control and VIO odometry</description>
   <maintainer email="salvatoredelpeschio@gmail.com">Salvatore Del Peschio</maintainer>
   <license>Apache-2.0</license>
 

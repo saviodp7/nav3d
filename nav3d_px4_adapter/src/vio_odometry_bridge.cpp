@@ -1,4 +1,4 @@
-#include "nav3d_px4_bridge/vio_odometry_bridge.hpp"
+#include "nav3d_px4_adapter/vio_odometry_bridge.hpp"
 
 #include <chrono>
 #include <cmath>

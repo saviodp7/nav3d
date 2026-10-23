@@ -20,7 +20,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-namespace nav3d_px4_bridge {
+namespace nav3d_px4_adapter {
 
 class OffboardControl final : public rclcpp::Node {
   public:
@@ -112,4 +112,4 @@ class OffboardControl final : public rclcpp::Node {
     std::string fmu_out_vehicle_local_position_{"/fmu/out/vehicle_local_position"};
 };
 
-} // namespace nav3d_px4_bridge
+} // namespace nav3d_px4_adapter

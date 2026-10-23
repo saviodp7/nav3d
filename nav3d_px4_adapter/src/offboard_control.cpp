@@ -1,4 +1,4 @@
-#include "nav3d_px4_bridge/offboard_control.hpp"
+#include "nav3d_px4_adapter/offboard_control.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -8,7 +8,7 @@
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
-namespace nav3d_px4_bridge {
+namespace nav3d_px4_adapter {
 
 static rclcpp::QoS px4Qos() {
     return rclcpp::QoS(1)
@@ -348,4 +348,4 @@ void OffboardControl::timerCallback() {
     }
 }
 
-} // namespace nav3d_px4_bridge
+} // namespace nav3d_px4_adapter

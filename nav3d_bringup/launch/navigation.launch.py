@@ -142,14 +142,14 @@ def generate_launch_description() -> LaunchDescription:
             #     remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
             # ),
             Node(
-                package="nav3d_px4_bridge",
+                package="nav3d_px4_adapter",
                 executable="vio_odometry_bridge",
                 name="vio_odometry_bridge",
                 output="screen",
                 arguments=["--ros-args", "--log-level", log_level],
             ),
             Node(
-                package="nav3d_px4_bridge",
+                package="nav3d_px4_adapter",
                 executable="offboard_control_node",
                 name="offboard_control",
                 output="screen",

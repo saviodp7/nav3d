@@ -52,7 +52,7 @@ Nav3D is designed around four goals:
   planner.
 - **Waypoint-streaming controller** that converts a geometric path into time-paced
   `nav3d_msgs/TrajectoryPoint` references.
-- **PX4 offboard bridge** that converts ROS ENU references into PX4-compatible NED
+- **PX4 adapter** that converts ROS ENU references into PX4-compatible NED
   trajectory setpoints.
 - **Gazebo/PX4 SITL reference setup** for an X500 UAV equipped with depth perception.
 
@@ -62,7 +62,7 @@ At runtime, a navigation request is received as a 3D pose. The BT Navigator coor
 planning and execution through the selected Behavior Tree. The planner server calls the
 configured global planner plugin, currently `MoveItGlobalPlanner`, which generates a
 collision-free geometric path in the current MoveIt PlanningScene. The controller server
-then streams time-paced waypoint references along that path. The PX4 bridge performs the
+then streams time-paced waypoint references along that path. The PX4 adapter performs the
 ENU-to-NED conversion and publishes PX4 `TrajectorySetpoint` messages in offboard mode.
 
 The default Behavior Tree checks a truncated local portion of the active path. If that
@@ -86,7 +86,7 @@ Goal -> ComputePathToPose -> FollowPath
 | `nav3d_planner` | Planner server exposing `ComputePathToPose` and path validity services. |
 | `nav3d_planner_plugin_moveit` | MoveIt/OMPL global planner plugin for 3D path generation and validity queries. |
 | `nav3d_controller` | Path execution server and waypoint-streaming controller. |
-| `nav3d_px4_bridge` | VIO/odometry bridge and PX4 offboard trajectory-setpoint bridge. |
+| `nav3d_px4_adapter` | PX4 offboard trajectory-setpoint integration and VIO/odometry bridge. |
 | `nav3d_gz_bridge` | Gazebo to ROS 2 topic bridges and static transforms for simulation. |
 | `nav3d_lifecycle_manager` | Lifecycle orchestration for the navigation servers. |
 | `nav3d_core` | Core plugin interfaces and shared navigation abstractions. |
