@@ -6,7 +6,6 @@
 #include "tf2_ros/create_timer_ros.h"
 
 #include <algorithm>
-#include <builtin_interfaces/msg/duration.hpp>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -26,14 +25,6 @@ namespace {
 rclcpp::NodeOptions withAutoDeclaredParams(const rclcpp::NodeOptions& in) {
     auto out = in;
     out.automatically_declare_parameters_from_overrides(true);
-    return out;
-}
-
-builtin_interfaces::msg::Duration toMsgDuration(const rclcpp::Duration& d) {
-    builtin_interfaces::msg::Duration out;
-    out.sec = static_cast<int32_t>(d.seconds());
-    const auto ns = d.nanoseconds() - static_cast<int64_t>(out.sec) * 1000000000LL;
-    out.nanosec = static_cast<uint32_t>(std::max<int64_t>(0, ns));
     return out;
 }
 
@@ -111,7 +102,6 @@ nav3d_util::CallbackReturn ControllerServer::on_configure(const rclcpp_lifecycle
 
     current_path_.clear();
     current_waypoint_index_ = 0;
-    path_start_time_ = rclcpp::Time(0, 0, get_clock()->get_clock_type());
 
     return nav3d_util::CallbackReturn::SUCCESS;
 }
@@ -137,7 +127,6 @@ nav3d_util::CallbackReturn ControllerServer::on_cleanup(const rclcpp_lifecycle::
 
     current_path_.clear();
     current_waypoint_index_ = 0;
-    path_start_time_ = rclcpp::Time(0, 0, get_clock()->get_clock_type());
 
     return nav3d_util::CallbackReturn::SUCCESS;
 }
@@ -185,8 +174,12 @@ void ControllerServer::computeControl() {
                 last_valid_cmd_time_ = now();
             }
 
-            const auto cmd = getCurrentCommand();
+            auto cmd = getCurrentCommand();
             if (cmd.has_value()) {
+                cmd->header.stamp = now();
+                cmd->header.frame_id = global_frame_;
+                cmd->velocity_valid = true;
+                cmd->acceleration_valid = false;
                 waypoint_pub_->publish(*cmd);
             }
 
@@ -259,7 +252,6 @@ void ControllerServer::generateTimedTrajectory(const nav_msgs::msg::Path& path) 
     auto poses = path.poses;
 
     const rclcpp::Time start_time = now() + rclcpp::Duration::from_seconds(0.1);
-    path_start_time_ = start_time;
 
     double accumulated_time = 0.0;
     const double v = std::max(1e-3, getSpeedLimit());
@@ -295,7 +287,6 @@ std::optional<nav3d_msgs::msg::TrajectoryPoint> ControllerServer::getCurrentComm
 
     if (tnow <= current_path_.front().first) {
         nav3d_msgs::msg::TrajectoryPoint out;
-        out.time_from_start = toMsgDuration(current_path_.front().first - path_start_time_);
         out.pose = current_path_.front().second.pose;
         out.velocity = geometry_msgs::msg::Twist{};
         return out;
@@ -303,7 +294,6 @@ std::optional<nav3d_msgs::msg::TrajectoryPoint> ControllerServer::getCurrentComm
 
     if (tnow >= current_path_.back().first || current_path_.size() == 1) {
         nav3d_msgs::msg::TrajectoryPoint out;
-        out.time_from_start = toMsgDuration(current_path_.back().first - path_start_time_);
         out.pose = current_path_.back().second.pose;
         out.velocity = geometry_msgs::msg::Twist{};
         return out;
@@ -376,7 +366,6 @@ std::optional<nav3d_msgs::msg::TrajectoryPoint> ControllerServer::getCurrentComm
     }
 
     nav3d_msgs::msg::TrajectoryPoint out;
-    out.time_from_start = toMsgDuration(tnow - path_start_time_);
     out.pose = pose;
     out.velocity = tw;
     return out;

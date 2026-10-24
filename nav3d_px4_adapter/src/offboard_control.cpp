@@ -135,7 +135,8 @@ void OffboardControl::fillPositionVelocityFields(px4_msgs::msg::TrajectorySetpoi
 }
 
 void OffboardControl::waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::SharedPtr msg) {
-    last_valid_setpoint_enu_ = EnuSetpoint{msg->pose, msg->velocity};
+    last_valid_setpoint_enu_ =
+        EnuSetpoint{msg->pose, msg->velocity_valid ? msg->velocity : geometry_msgs::msg::Twist{}};
     last_waypoint_time_ = get_clock()->now();
 
     auto ned_pose = enuToNedPose(msg->pose);
@@ -143,27 +144,25 @@ void OffboardControl::waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::S
     ned_pose.position.y += odom_to_px4_offset_.y;
     ned_pose.position.z += odom_to_px4_offset_.z;
 
-    const double vx_enu = msg->velocity.linear.x;
-    const double vy_enu = msg->velocity.linear.y;
-    const double vz_enu = msg->velocity.linear.z;
-
-    const float vx_ned = static_cast<float>(vy_enu);
-    const float vy_ned = static_cast<float>(vx_enu);
-    const float vz_ned = static_cast<float>(-vz_enu);
-
     current_waypoint_ned_ = std::make_shared<px4_msgs::msg::TrajectorySetpoint>();
     current_waypoint_ned_->position[0] = static_cast<float>(ned_pose.position.x);
     current_waypoint_ned_->position[1] = static_cast<float>(ned_pose.position.y);
     current_waypoint_ned_->position[2] = static_cast<float>(ned_pose.position.z);
 
-    current_waypoint_ned_->velocity[0] = vx_ned;
-    current_waypoint_ned_->velocity[1] = vy_ned;
-    current_waypoint_ned_->velocity[2] = vz_ned;
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+    current_waypoint_ned_->velocity[0] = msg->velocity_valid ? static_cast<float>(msg->velocity.linear.y) : nan;
+    current_waypoint_ned_->velocity[1] = msg->velocity_valid ? static_cast<float>(msg->velocity.linear.x) : nan;
+    current_waypoint_ned_->velocity[2] = msg->velocity_valid ? static_cast<float>(-msg->velocity.linear.z) : nan;
 
     const double yaw_ned = tf2::getYaw(ned_pose.orientation);
     current_waypoint_ned_->yaw = static_cast<float>(yaw_ned);
 
     fillPositionVelocityFields(*current_waypoint_ned_);
+    if (msg->acceleration_valid) {
+        current_waypoint_ned_->acceleration[0] = static_cast<float>(msg->acceleration.linear.y);
+        current_waypoint_ned_->acceleration[1] = static_cast<float>(msg->acceleration.linear.x);
+        current_waypoint_ned_->acceleration[2] = static_cast<float>(-msg->acceleration.linear.z);
+    }
 }
 
 void OffboardControl::publishOffboardControlHeartbeat() {

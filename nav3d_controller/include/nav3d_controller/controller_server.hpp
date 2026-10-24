@@ -75,7 +75,6 @@ class ControllerServer : public nav3d_util::LifecycleNode {
 
     rclcpp::Time last_valid_cmd_time_;
 
-    rclcpp::Time path_start_time_{0, 0, RCL_ROS_TIME};
     std::vector<std::pair<rclcpp::Time, geometry_msgs::msg::PoseStamped>> current_path_;
     size_t current_waypoint_index_{0};
 

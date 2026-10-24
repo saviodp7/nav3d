@@ -1,15 +1,21 @@
 # Trajectory point state
 
-# Desired time from the trajectory start to arrive at this trajectory sample.
-builtin_interfaces/Duration time_from_start
+# Frame and time of this trajectory sample.
+std_msgs/Header header
 
 # Pose of the trajectory sample.
 geometry_msgs/Pose pose
 
-# Velocity of the trajectory sample.
+# Whether velocity is specified. False means unspecified, not zero.
+bool velocity_valid
+
+# Velocity of the trajectory sample, used only when velocity_valid is true.
 geometry_msgs/Twist velocity
 
-# Acceleration of the trajectory (optional).
+# Whether acceleration is specified. False means unspecified, not zero.
+bool acceleration_valid
+
+# Acceleration of the trajectory sample, used only when acceleration_valid is true.
 geometry_msgs/Accel acceleration
 
 # Force/Torque to apply at trajectory sample (optional).
