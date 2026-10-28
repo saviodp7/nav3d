@@ -108,7 +108,7 @@ class OffboardControl final : public rclcpp::Node {
     std::string fmu_in_traj_setpoint_{"/fmu/in/trajectory_setpoint"};
     std::string fmu_in_vehicle_command_{"/fmu/in/vehicle_command"};
 
-    std::string fmu_out_vehicle_status_{"/fmu/out/vehicle_status"};
+    std::string fmu_out_vehicle_status_{"/fmu/out/vehicle_status_v1"};
     std::string fmu_out_vehicle_local_position_{"/fmu/out/vehicle_local_position"};
 };
 

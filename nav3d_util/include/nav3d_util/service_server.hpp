@@ -24,7 +24,7 @@ template <class ServiceT, typename NodeT = rclcpp::Node::SharedPtr> class Servic
             service_name_,
             [this](const std::shared_ptr<rmw_request_id_t> request_header, const std::shared_ptr<RequestType> request,
                    std::shared_ptr<ResponseType> response) { callback_(request_header, request, std::move(response)); },
-            qos.get_rmw_qos_profile(), callback_group);
+            qos, callback_group);
     }
 
     const std::string& getServiceName() const { return service_name_; }

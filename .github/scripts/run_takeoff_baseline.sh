@@ -4,13 +4,9 @@ set -eo pipefail
 sim_root="${NAV3D_SIM_ROOT:-/workspaces/nav3d_sim}"
 cd "${sim_root}"
 
-source /opt/ros/humble/setup.bash
+source /opt/ros/jazzy/setup.bash
 
-# Keep the SITL and message definitions aligned with the locally captured
-# automatic-takeoff baseline; do not silently follow a moving release branch.
 bash scripts/get_px4.sh
-git -C PX4-Autopilot checkout --detach 1555f2bd2229544c43966ab5f94879c41d8e1e01
-git -C ros2_ws/src/px4_msgs checkout --detach ffb6e80e1c17e5714395611a020c282a87af8fa4
 bash scripts/install_gz_assets.sh
 
 colcon --log-base ros2_ws/log build --base-paths ros2_ws/src --build-base ros2_ws/build \

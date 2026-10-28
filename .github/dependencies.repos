@@ -2,4 +2,4 @@ repositories:
   px4_msgs:
     type: git
     url: https://github.com/PX4/px4_msgs.git
-    version: 30b94f2fc6231a82147ad6312ae84e7c7c61ddb5
+    version: 392e831c1f659429ca83902e66820d7094591410

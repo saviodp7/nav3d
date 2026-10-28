@@ -1,11 +1,9 @@
 #pragma once
 
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+
 #include <memory>
 #include <string>
-
-namespace rclcpp_lifecycle {
-class LifecycleNode;
-}
 
 namespace tf2_ros {
 class Buffer;

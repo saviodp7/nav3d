@@ -177,7 +177,7 @@ std::vector<geometry_msgs::msg::PoseStamped> MoveGroupInterface::plan(const geom
         return {};
     }
 
-    const auto& traj = plan.trajectory_.multi_dof_joint_trajectory;
+    const auto& traj = plan.trajectory.multi_dof_joint_trajectory;
     const auto& points = traj.points;
     if (points.empty()) {
         return {};

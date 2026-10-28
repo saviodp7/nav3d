@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -31,6 +33,26 @@ def generate_launch_description() -> LaunchDescription:
             "takeoff_test",
             "takeoff_test.params.yaml",
         ]
+    )
+
+    bag_output = PathJoinSubstitution(
+        [workspace_root, "ros2_ws", "log", "system_tests", f"takeoff_test_bag_{uuid4().hex}"]
+    )
+    bag_recorder = ExecuteProcess(
+        cmd=[
+            "ros2",
+            "bag",
+            "record",
+            "--output",
+            bag_output,
+            "/odom",
+            "/fmu/out/vehicle_status_v1",
+            "/fmu/in/trajectory_setpoint",
+        ],
+        name="takeoff_bag_recorder",
+        output="log",
+        sigterm_timeout="10",
+        sigkill_timeout="5",
     )
 
     px4_process = ExecuteProcess(
@@ -79,6 +101,7 @@ def generate_launch_description() -> LaunchDescription:
             OpaqueFunction(function=configure_headless),
             SetEnvironmentVariable("PX4_DAEMON", "1"),
             SetEnvironmentVariable("PX4_GZ_WORLD", "default"),
+            bag_recorder,
             px4_process,
             TimerAction(period=5.0, actions=[nav3d_bringup]),
             # Subscribe before bringup can arm the vehicle, so the ground pose is captured.

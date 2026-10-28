@@ -66,7 +66,7 @@ class TakeoffTest(Node):
         self.takeoff_diagnostics = {}
 
         self.create_subscription(Odometry, "/odom", self._odom_callback, sensor_qos)
-        self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status", self._vehicle_status_callback, sensor_qos)
+        self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status_v1", self._vehicle_status_callback, sensor_qos)
         self.create_subscription(TrajectorySetpoint, "/fmu/in/trajectory_setpoint", self._setpoint_callback, sensor_qos)
         self.lifecycle_client = self.create_client(Trigger, "/lifecycle_manager_navigation/is_active")
 
@@ -97,7 +97,7 @@ class TakeoffTest(Node):
         if (
             self.initial_pose is None
             and self.latest_vehicle_status is not None
-            and self.latest_vehicle_status.arming_state == VehicleStatus.ARMING_STATE_STANDBY
+            and self.latest_vehicle_status.arming_state == VehicleStatus.ARMING_STATE_DISARMED
         ):
             self.initial_pose = self._pose_sample()
             if self.initial_pose is not None:

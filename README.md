@@ -5,10 +5,10 @@
 </p>
 
 <p align="center">
-  <img alt="ROS 2 Humble" src="https://img.shields.io/badge/ROS%202-Humble-22314E">
+  <img alt="ROS 2 Jazzy" src="https://img.shields.io/badge/ROS%202-Jazzy-22314E">
   <img alt="PX4 SITL" src="https://img.shields.io/badge/PX4-SITL-1B6AC6">
   <img alt="MoveIt 2" src="https://img.shields.io/badge/MoveIt-2-68A063">
-  <img alt="Gazebo Garden" src="https://img.shields.io/badge/Gazebo-Garden-8A2BE2">
+  <img alt="Gazebo Harmonic" src="https://img.shields.io/badge/Gazebo-Harmonic-8A2BE2">
 </p>
 
 Nav3D is a ROS 2 navigation stack that reformulates the Nav2 architectural model for
@@ -103,9 +103,9 @@ providing an equivalent robot description, TF structure and MoveIt configuration
 
 The reference setup used during development and evaluation is:
 
-- Ubuntu 22.04 with ROS 2 Humble.
-- Gazebo Garden through `ros_gz`.
-- PX4 SITL with Micro XRCE-DDS communication.
+- Ubuntu 24.04 with ROS 2 Jazzy.
+- Gazebo Harmonic through `ros_gz`.
+- PX4 SITL v1.16.2 with Micro XRCE-DDS communication.
 - X500 depth-camera model.
 - MoveIt 2 with OMPL
 
@@ -113,14 +113,14 @@ The reference setup used during development and evaluation is:
 ## Quick Start
 
 The easiest way to reproduce the reference setup is to use the full `nav3d_sim` workspace
-with its devcontainer. The devcontainer installs ROS 2 Humble, Gazebo Garden, MoveIt 2,
+with its devcontainer. The devcontainer installs ROS 2 Jazzy, Gazebo Harmonic, MoveIt 2,
 PX4 dependencies and the Micro XRCE-DDS Agent.
 
 Build the ROS 2 workspace:
 
 ```bash
-cd /root/nav3d_sim/ros2_ws
-source /opt/ros/humble/setup.bash
+cd /workspaces/nav3d_sim/ros2_ws
+source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ```
@@ -136,7 +136,7 @@ Start Nav3D in another terminal:
 
 ```bash
 cd /root/nav3d_sim/ros2_ws
-source /opt/ros/humble/setup.bash
+source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch nav3d_bringup bringup.launch.py
 ```

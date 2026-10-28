@@ -25,8 +25,7 @@ template <class ServiceT, typename NodeT = rclcpp::Node::SharedPtr> class Servic
             callback_group_executor_->add_callback_group(callback_group_, node_->get_node_base_interface());
         }
 
-        client_ = node_->template create_client<ServiceT>(
-            service_name_, rclcpp::SystemDefaultsQoS().get_rmw_qos_profile(), callback_group_);
+        client_ = node_->template create_client<ServiceT>(service_name_, rclcpp::SystemDefaultsQoS(), callback_group_);
     }
 
     ~ServiceClient() {
