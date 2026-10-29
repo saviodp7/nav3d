@@ -1,0 +1,9 @@
+.git
+build
+install
+log
+external
+PX4-Autopilot
+.devcontainer/.docker.xauth
+.devcontainer/docker-compose.gpu.generated.yml
+**/__pycache__

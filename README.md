@@ -86,18 +86,14 @@ Goal -> ComputePathToPose -> FollowPath
 | `nav3d_planner` | Planner server exposing `ComputePathToPose` and path validity services. |
 | `nav3d_planner_plugin_moveit` | MoveIt/OMPL global planner plugin for 3D path generation and validity queries. |
 | `nav3d_controller` | Path execution server and waypoint-streaming controller. |
-| `nav3d_px4_adapter` | PX4 offboard trajectory-setpoint integration and VIO/odometry bridge. |
+| `nav3d_px4_adapter` | PX4 adapter node for odometry, TF, vehicle commands and trajectory setpoints. |
 | `nav3d_gz_bridge` | Gazebo to ROS 2 topic bridges and static transforms for simulation. |
+| `nav3d_uavs` | UAV descriptions, Gazebo models and per-vehicle MoveIt configuration. |
 | `nav3d_lifecycle_manager` | Lifecycle orchestration for the navigation servers. |
 | `nav3d_core` | Core plugin interfaces and shared navigation abstractions. |
 | `nav3d_common` | Shared launch and configuration utilities. |
 | `nav3d_util` | Lifecycle, action, service, TF and odometry utilities. |
 | `nav3d_msgs` | Actions, services and messages used by the stack. |
-
-The reference airframe integration is provided by `x500_nav3d`, which contains the X500
-description and the MoveIt configuration for the floating-base planning group. Keeping this
-outside the navigation core is intentional: a different UAV should be integrated by
-providing an equivalent robot description, TF structure and MoveIt configuration.
 
 ## Reference Stack
 
@@ -112,30 +108,30 @@ The reference setup used during development and evaluation is:
 
 ## Quick Start
 
-The easiest way to reproduce the reference setup is to use the full `nav3d_sim` workspace
-with its devcontainer. The devcontainer installs ROS 2 Jazzy, Gazebo Harmonic, MoveIt 2,
-PX4 dependencies and the Micro XRCE-DDS Agent.
+Open this repository in its Dev Container. It installs ROS 2 Jazzy, Gazebo Harmonic,
+MoveIt 2, PX4 dependencies and the Micro XRCE-DDS Agent. The Dev Container
+mounts this repository at `/ros2_ws/src/nav3d`. It checks out PX4 at
+`/ros2_ws/PX4-Autopilot` and `px4_msgs` at `/ros2_ws/src/px4_msgs`.
 
 Build the ROS 2 workspace:
 
 ```bash
-cd /workspaces/nav3d_sim/ros2_ws
+cd /ros2_ws
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ```
 
-Start PX4 SITL and the XRCE-DDS agent in one terminal:
+Build PX4 SITL:
 
 ```bash
-cd /root/nav3d_sim
-./scripts/run_px4_sim.sh
+make -C /ros2_ws/PX4-Autopilot -j2 px4_sitl_default
 ```
 
-Start Nav3D in another terminal:
+Start Nav3D:
 
 ```bash
-cd /root/nav3d_sim/ros2_ws
+cd /ros2_ws
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch nav3d_bringup bringup.launch.py

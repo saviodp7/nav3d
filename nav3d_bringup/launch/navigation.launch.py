@@ -45,46 +45,14 @@ def generate_launch_description() -> LaunchDescription:
 
     stdout_linebuf_envvar = SetEnvironmentVariable("RCUTILS_LOGGING_BUFFERED_STREAM", "1")
 
-    declare_namespace_cmd = DeclareLaunchArgument(
-        "namespace",
-        default_value="",
-        description="Top-level namespace",
-    )
-
-    declare_robot_name_cmd = DeclareLaunchArgument(
-        "robot_name",
-        default_value="x500",
-        description="Robot name for description package",
-    )
-
-    declare_use_sim_time_cmd = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="False",
-        description="Use simulation clock if true",
-    )
-
-    declare_autostart_cmd = DeclareLaunchArgument(
-        "autostart",
-        default_value="True",
-        description="Automatically startup the nav2 stack",
-    )
-
-    declare_use_respawn_cmd = DeclareLaunchArgument(
-        "use_respawn",
-        default_value="False",
-        description="Whether to respawn if a node crashes",
-    )
-
-    declare_log_level_cmd = DeclareLaunchArgument(
-        "log_level",
-        default_value="info",
-        description="Logging level for the nodes",
-    )
-
+    declare_namespace_cmd = DeclareLaunchArgument("namespace", default_value="")
+    declare_robot_name_cmd = DeclareLaunchArgument("robot_name", default_value="x500")
+    declare_use_sim_time_cmd = DeclareLaunchArgument("use_sim_time", default_value="False")
+    declare_autostart_cmd = DeclareLaunchArgument("autostart", default_value="True")
+    declare_use_respawn_cmd = DeclareLaunchArgument("use_respawn", default_value="False")
+    declare_log_level_cmd = DeclareLaunchArgument("log_level", default_value="info")
     declare_params_file_cmd = DeclareLaunchArgument(
-        "params_file",
-        default_value=os.path.join(bringup_dir, "params", "nav3d_params.yaml"),
-        description="Full path to the ROS2 parameters file to use for all launched nodes",
+        "params_file", default_value=os.path.join(bringup_dir, "params", "nav3d_params.yaml")
     )
 
     load_nodes = GroupAction(
@@ -141,20 +109,6 @@ def generate_launch_description() -> LaunchDescription:
             #     arguments=['--ros-args', '--log-level', log_level],
             #     remappings=remappings + [('cmd_vel', 'cmd_vel_nav')],
             # ),
-            Node(
-                package="nav3d_px4_adapter",
-                executable="vio_odometry_bridge",
-                name="vio_odometry_bridge",
-                output="screen",
-                arguments=["--ros-args", "--log-level", log_level],
-            ),
-            Node(
-                package="nav3d_px4_adapter",
-                executable="offboard_control_node",
-                name="offboard_control",
-                output="screen",
-                arguments=["--ros-args", "--log-level", log_level],
-            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(bringup_dir, "launch", "movegroup.launch.py")),
                 launch_arguments={

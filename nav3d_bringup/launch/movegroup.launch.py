@@ -2,7 +2,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from moveit_configs_utils import MoveItConfigsBuilder
+from nav3d_uavs.moveit import load_x500_moveit_config
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -25,23 +25,7 @@ def generate_launch_description() -> LaunchDescription:
     moveit_available = False
     moveit_config = None
     try:
-        moveit_config = (
-            MoveItConfigsBuilder("x500")
-            .robot_description(file_path="config/x500.urdf.xacro")
-            .robot_description_semantic(file_path="config/x500.srdf")
-            .joint_limits(file_path="config/joint_limits.yaml")
-            .planning_scene_monitor(
-                publish_robot_description=False,
-                publish_robot_description_semantic=True,
-                publish_planning_scene=True,
-            )
-            .trajectory_execution(file_path="config/moveit_controllers.yaml")
-            .planning_pipelines(
-                pipelines=["ompl"],
-            )
-            .sensors_3d(file_path="config/sensors_3d.yaml")
-            .to_moveit_configs()
-        )
+        moveit_config = load_x500_moveit_config()
         moveit_available = True
         print("[INFO] MoveIt config loaded successfully")
     except Exception as e:

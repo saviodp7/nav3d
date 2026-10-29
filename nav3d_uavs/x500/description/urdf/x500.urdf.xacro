@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<robot name="x500"
+  xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ====== Properties ====== -->
+  <xacro:property name="prop_scale" value="0.846154"/>
+  <xacro:property name="bell_mesh" value="package://nav3d_uavs/x500/description/meshes/5010Bell.dae"/>
+  <xacro:property name="prop_ccw_mesh" value="package://nav3d_uavs/x500/description/meshes/1345_prop_ccw.stl"/>
+  <xacro:property name="prop_cw_mesh" value="package://nav3d_uavs/x500/description/meshes/1345_prop_cw.stl"/>
+
+  <xacro:property name="body_mesh" value="package://nav3d_uavs/x500/description/meshes/NXP-HGD-CF.dae"/>
+  <xacro:property name="base_mesh" value="package://nav3d_uavs/x500/description/meshes/5010Base.dae"/>
+
+  <xacro:property name="prop_origin_xyz" value="-0.022 -0.146385 -0.016"/>
+  <xacro:property name="bell_origin_xyz" value="0 0 -0.032"/>
+
+  <!-- ====== Macros ====== -->
+  <xacro:macro name="rotor" params="idx joint_xyz prop_mesh bell_mesh scale">
+    <link name="rotor_${idx}">
+      <inertial>
+        <mass value="0.016077"/>
+        <inertia ixx="3.84649e-07" ixy="0.0" ixz="0.0" iyy="2.61159e-05" iyz="0.0" izz="2.64986e-05"/>
+      </inertial>
+
+      <visual>
+        <origin xyz="${prop_origin_xyz}" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="${prop_mesh}" scale="${scale} ${scale} ${scale}"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="${bell_origin_xyz}" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="${bell_mesh}"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.279231 0.0169231 0.000846154"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="rotor_${idx}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="rotor_${idx}"/>
+      <origin xyz="${joint_xyz}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ====== Base Link ====== -->
+  <link name="base_link">
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.0216667" ixy="0.0" ixz="0.0" iyy="0.0216667" iyz="0.0" izz="0.04"/>
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0.025" rpy="0 0 -3.14159"/>
+      <geometry>
+        <mesh filename="${body_mesh}"/>
+      </geometry>
+    </visual>
+
+    <visual>
+      <origin xyz="0.174 0.174 0.032" rpy="0 0 -0.45"/>
+      <geometry>
+        <mesh filename="${base_mesh}"/>
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.174 0.174 0.032" rpy="0 0 -0.45"/>
+      <geometry>
+        <mesh filename="${base_mesh}"/>
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="0.174 -0.174 0.032" rpy="0 0 -0.45"/>
+      <geometry>
+        <mesh filename="${base_mesh}"/>
+      </geometry>
+    </visual>
+    <visual>
+      <origin xyz="-0.174 -0.174 0.032" rpy="0 0 -0.45"/>
+      <geometry>
+        <mesh filename="${base_mesh}"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0.01" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.653553 0.653553 0.15"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.098 -0.123" rpy="-0.35 0 0"/>
+      <geometry>
+        <box size="0.015 0.015 0.21"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.098 -0.123" rpy="0.35 0 0"/>
+      <geometry>
+        <box size="0.015 0.015 0.21"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.132 -0.2195" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.25 0.015 0.015"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.132 -0.2195" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.25 0.015 0.015"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="oakd_link"/>
+  <joint name="oakd_mount_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="oakd_link"/>
+    <origin xyz="0.12 0.03 0.002" rpy="0 0 0"/>
+  </joint>
+
+  <link name="oakd_depth_frame"/>
+  <joint name="oakd_depth_joint" type="fixed">
+    <parent link="oakd_link"/>
+    <child link="oakd_depth_frame"/>
+    <origin xyz="0.01233 -0.03 0.01878" rpy="0 0 0"/>
+  </joint>
+
+  <link name="oakd_depth_optical_frame"/>
+  <joint name="oakd_depth_optical_joint" type="fixed">
+    <parent link="oakd_depth_frame"/>
+    <child link="oakd_depth_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5707963267948966 0 -1.5707963267948966"/>
+  </joint>
+
+  <link name="oakd_rgb_optical_frame"/>
+  <joint name="oakd_rgb_optical_joint" type="fixed">
+    <parent link="oakd_link"/>
+    <child link="oakd_rgb_optical_frame"/>
+    <origin xyz="0.01233 -0.03 0.01878" rpy="-1.5707963267948966 0 -1.5707963267948966"/>
+  </joint>
+
+  <!-- ====== Rotors ====== -->
+  <xacro:rotor idx="0" joint_xyz="0.174 -0.174 0.06" prop_mesh="${prop_ccw_mesh}" bell_mesh="${bell_mesh}" scale="${prop_scale}"/>
+
+  <xacro:rotor idx="1" joint_xyz="-0.174 0.174 0.06" prop_mesh="${prop_cw_mesh}" bell_mesh="${bell_mesh}" scale="${prop_scale}"/>
+
+  <xacro:rotor idx="2" joint_xyz="0.174 0.174 0.06" prop_mesh="${prop_ccw_mesh}" bell_mesh="${bell_mesh}" scale="${prop_scale}"/>
+
+  <xacro:rotor idx="3" joint_xyz="-0.174 -0.174 0.06" prop_mesh="${prop_cw_mesh}" bell_mesh="${bell_mesh}" scale="${prop_scale}"/>
+
+</robot>

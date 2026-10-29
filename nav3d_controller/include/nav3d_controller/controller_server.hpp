@@ -61,7 +61,7 @@ class ControllerServer : public nav3d_util::LifecycleNode {
     std::string robot_base_frame_{"base_link"};
     double transform_tolerance_{0.1};
 
-    std::string waypoint_topic_{"offboard/waypoint"};
+    std::string waypoint_topic_{"uav/waypoint"};
     double controller_frequency_{50.0};
 
     double xyz_goal_tolerance_{0.1};

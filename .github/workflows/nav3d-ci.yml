@@ -3,7 +3,7 @@ name: NAV3D CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
     branches:
       - main
@@ -61,7 +61,10 @@ jobs:
             nav3d_lifecycle_manager
             nav3d_px4_adapter
             nav3d_gz_bridge
+            nav3d_gz_worlds
+            nav3d_uavs
             nav3d_bringup
+            nav3d_system_tests
           vcs-repo-file-url: ${{ steps.dependency_manifest.outputs.url }}
           coverage-result: false
 
@@ -94,55 +97,28 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - name: Check out Nav3D pull request
+      - name: Check out Nav3D
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-
-      - name: Check out simulation workspace
-        uses: actions/checkout@v7
-        with:
-          repository: saviodp7/nav3d_sim
-          ref: ${{ (github.head_ref || github.ref_name) == 'refactor/migrate-on-jazzy-with-gazebo-harmonic' && 'refactor/migrate-on-jazzy-with-gazebo-harmonic' || 'main' }}
-          path: nav3d_sim
-          persist-credentials: false
-
-      - name: Check out Nav3D pull request into simulation workspace
-        uses: actions/checkout@v7
-        with:
-          path: nav3d_sim/ros2_ws/src/nav3d
-          persist-credentials: false
-
-      - name: Check out drone description and MoveIt configuration
-        uses: actions/checkout@v7
-        with:
-          repository: saviodp7/x500_nav3d
-          ref: a0c1bc3f2dca0969fbdbf9249a0bae93fa025b88
-          path: nav3d_sim/ros2_ws/src/x500_nav3d
-          persist-credentials: false
-
-      - name: Verify the Nav3D revision under test
-        shell: bash
-        run: |
-          test "$(git -C nav3d_sim/ros2_ws/src/nav3d rev-parse HEAD)" = "$(git rev-parse HEAD)"
 
       - name: Build simulation image
         shell: bash
-        run: docker build --tag nav3d-ci --file nav3d_sim/docker/Dockerfile nav3d_sim
+        run: docker build --tag nav3d-ci --file docker/Dockerfile .
 
-      - name: Run automatic takeoff in the default world
+      - name: Run takeoff test
         shell: bash
         run: |
           set -o pipefail
-          mkdir -p nav3d_sim/ros2_ws/log/system_tests
+          mkdir -p log/system_tests
           docker run --rm --shm-size=1g \
             --env LIBGL_ALWAYS_SOFTWARE=1 \
             --env EGL_PLATFORM=surfaceless \
-            --volume "${GITHUB_WORKSPACE}/nav3d_sim:/workspaces/nav3d_sim" \
-            --workdir /workspaces/nav3d_sim \
+            --volume "${GITHUB_WORKSPACE}:/workspaces/nav3d" \
+            --workdir /workspaces/nav3d \
             nav3d-ci \
-            bash /workspaces/nav3d_sim/ros2_ws/src/nav3d/.github/scripts/run_takeoff_baseline.sh \
-            2>&1 | tee nav3d_sim/ros2_ws/log/system_tests/takeoff_test_ci.log
+            bash /workspaces/nav3d/.github/scripts/run_takeoff_test.sh \
+            2>&1 | tee log/system_tests/takeoff_test_ci.log
 
       - name: Upload report and logs
         if: always()
@@ -150,9 +126,10 @@ jobs:
         with:
           name: takeoff-test
           path: |
-            nav3d_sim/ros2_ws/log/system_tests/takeoff_test_ci.json
-            nav3d_sim/ros2_ws/log/system_tests/takeoff_test_ci.log
-            nav3d_sim/ros2_ws/log/system_tests/ros_logs/
-            nav3d_sim/PX4-Autopilot/build/px4_sitl_default/src/modules/simulation/gz_bridge/log/**/*.ulg
+            log/system_tests/takeoff_test_ci.json
+            log/system_tests/takeoff_test_ci.log
+            log/system_tests/ros_logs/
+            log/system_tests/takeoff_test_bag_*/
+            PX4-Autopilot/build/px4_sitl_default/rootfs/log/**/*.ulg
           if-no-files-found: warn
           retention-days: 14

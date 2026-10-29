@@ -5,33 +5,28 @@
 #include <functional>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
-VioOdometryBridge::VioOdometryBridge() : rclcpp::Node("vio_odometry_bridge") {
-    odom_topic_ = declare_parameter<std::string>("odom_topic", "/odom");
-    px4_topic_ = declare_parameter<std::string>("px4_topic", "/fmu/in/vehicle_visual_odometry");
+namespace nav3d_px4_adapter {
 
-    odom_frame_ = declare_parameter<std::string>("odom_frame", "odom");
-    base_frame_ = declare_parameter<std::string>("base_frame", "base_link");
+VioOdometryBridge::VioOdometryBridge(rclcpp::Node& node) : node_(node) {
+    px4_topic_ = node_.declare_parameter<std::string>("px4_topic", "/fmu/in/vehicle_visual_odometry");
 
-    pose_frame_ = declare_parameter<int>("pose_frame", 1);
-    velocity_frame_ = declare_parameter<int>("velocity_frame", 1);
+    odom_frame_ = node_.declare_parameter<std::string>("odom_frame", "odom");
+    base_frame_ = node_.declare_parameter<std::string>("base_frame", "base_link");
 
-    rmw_qos_profile_t qos_profile = rmw_qos_profile_sensor_data;
-    auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 5), qos_profile);
-
-    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-        odom_topic_, qos, std::bind(&VioOdometryBridge::on_odom, this, std::placeholders::_1));
+    pose_frame_ = node_.declare_parameter<int>("pose_frame", 1);
+    velocity_frame_ = node_.declare_parameter<int>("velocity_frame", 1);
 
     auto px4_qos = rclcpp::QoS(10).best_effort().durability_volatile();
-    px4_pub_ = create_publisher<px4_msgs::msg::VehicleOdometry>(px4_topic_, px4_qos);
+    px4_pub_ = node_.create_publisher<px4_msgs::msg::VehicleOdometry>(px4_topic_, px4_qos);
 
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
 
     R_enu2ned_ << 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0;
 
     R_flu2frd_ = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()).toRotationMatrix();
 }
 
-void VioOdometryBridge::on_odom(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void VioOdometryBridge::publishOdometry(const nav_msgs::msg::Odometry::SharedPtr msg) {
     const Eigen::Vector3d p_enu(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z);
 
     const Eigen::Quaterniond q_enu_flu(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x,
@@ -84,9 +79,4 @@ uint64_t VioOdometryBridge::now_us_steady() {
     return std::chrono::time_point_cast<std::chrono::microseconds>(clock::now()).time_since_epoch().count();
 }
 
-int main(int argc, char** argv) {
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<VioOdometryBridge>());
-    rclcpp::shutdown();
-    return 0;
-}
+} // namespace nav3d_px4_adapter

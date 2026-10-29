@@ -9,15 +9,18 @@
 #include <string>
 #include <tf2_ros/transform_broadcaster.h>
 
-class VioOdometryBridge final : public rclcpp::Node {
+namespace nav3d_px4_adapter {
+
+// PX4 odometry conversion and the temporary odom -> base_link TF owner.
+class VioOdometryBridge final {
   public:
-    VioOdometryBridge();
+    explicit VioOdometryBridge(rclcpp::Node& node);
+    void publishOdometry(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   private:
-    void on_odom(const nav_msgs::msg::Odometry::SharedPtr msg);
     static uint64_t now_us_steady();
 
-    std::string odom_topic_;
+    rclcpp::Node& node_;
     std::string px4_topic_;
 
     std::string odom_frame_;
@@ -29,7 +32,8 @@ class VioOdometryBridge final : public rclcpp::Node {
     Eigen::Matrix3d R_enu2ned_;
     Eigen::Matrix3d R_flu2frd_;
 
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<px4_msgs::msg::VehicleOdometry>::SharedPtr px4_pub_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 };
+
+} // namespace nav3d_px4_adapter

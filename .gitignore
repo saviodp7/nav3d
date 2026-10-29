@@ -1,3 +1,14 @@
 # Python generated files
 __pycache__/
 *.py[cod]
+
+# ROS2 artifacts
+/build/
+/install/
+/log/
+
+# Dev Container host state (contains an X11 authentication cookie)
+/.devcontainer/.docker.xauth
+/.devcontainer/docker-compose.gpu.generated.yml
+/.devcontainer/docker-compose.gpu.generated.yml.tmp.*
+/.vscode/browse.vc.db*
