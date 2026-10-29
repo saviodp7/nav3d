@@ -1,0 +1,4 @@
+# Default initial positions for x500's ros2_control fake system
+
+initial_positions:
+  virtual_joint: 0

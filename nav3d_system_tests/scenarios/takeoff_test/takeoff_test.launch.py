@@ -7,8 +7,7 @@ from launch.actions import (
     ExecuteProcess,
     IncludeLaunchDescription,
     OpaqueFunction,
-    SetEnvironmentVariable,
-    TimerAction,
+    SetLaunchConfiguration,
 )
 from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -19,8 +18,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def configure_headless(context):
     value = LaunchConfiguration("headless").perform(context).strip().lower()
-    # PX4 starts the Gazebo GUI only when HEADLESS is empty, not when it is "0".
-    return [SetEnvironmentVariable("HEADLESS", "1" if value in ("1", "true") else "")]
+    return [SetLaunchConfiguration("gui", "false" if value in ("1", "true") else "true")]
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -35,9 +33,7 @@ def generate_launch_description() -> LaunchDescription:
         ]
     )
 
-    bag_output = PathJoinSubstitution(
-        [workspace_root, "ros2_ws", "log", "system_tests", f"takeoff_test_bag_{uuid4().hex}"]
-    )
+    bag_output = PathJoinSubstitution([workspace_root, "log", "system_tests", f"takeoff_test_bag_{uuid4().hex}"])
     bag_recorder = ExecuteProcess(
         cmd=[
             "ros2",
@@ -55,19 +51,16 @@ def generate_launch_description() -> LaunchDescription:
         sigkill_timeout="5",
     )
 
-    px4_process = ExecuteProcess(
-        cmd=["bash", PathJoinSubstitution([workspace_root, "scripts", "run_px4_sim.sh"])],
-        name="nav3d_test_px4_sim",
-        output="log",
-        sigterm_timeout="10",
-        sigkill_timeout="5",
-    )
-
     nav3d_bringup = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([FindPackageShare("nav3d_bringup"), "launch", "bringup.launch.py"])
         ),
-        launch_arguments={"use_rviz": "false"}.items(),
+        launch_arguments={
+            "use_rviz": "false",
+            "use_px4": "true",
+            "world": "default",
+            "gui": LaunchConfiguration("gui"),
+        }.items(),
     )
 
     test_node = Node(
@@ -75,7 +68,10 @@ def generate_launch_description() -> LaunchDescription:
         executable="takeoff_test.py",
         name="takeoff_test",
         output="screen",
-        parameters=[scenario_params, {"use_sim_time": True, "report_file": report_file}],
+        parameters=[
+            scenario_params,
+            {"use_sim_time": True, "report_file": report_file},
+        ],
         on_exit=[EmitEvent(event=Shutdown(reason="automatic-takeoff test completed"))],
     )
 
@@ -83,14 +79,12 @@ def generate_launch_description() -> LaunchDescription:
         [
             DeclareLaunchArgument(
                 "workspace_root",
-                default_value="/workspaces/nav3d_sim",
-                description="Root of the nav3d_sim workspace inside the dev container",
+                default_value="/ros2_ws/src/nav3d",
+                description="Root of the Nav3D repository inside the dev container",
             ),
             DeclareLaunchArgument(
                 "report_file",
-                default_value=PathJoinSubstitution(
-                    [workspace_root, "ros2_ws", "log", "system_tests", "takeoff_test.json"]
-                ),
+                default_value=PathJoinSubstitution([workspace_root, "log", "system_tests", "takeoff_test.json"]),
                 description="JSON report written by the system test",
             ),
             DeclareLaunchArgument(
@@ -99,12 +93,9 @@ def generate_launch_description() -> LaunchDescription:
                 description="Run Gazebo without its graphical client (true in CI)",
             ),
             OpaqueFunction(function=configure_headless),
-            SetEnvironmentVariable("PX4_DAEMON", "1"),
-            SetEnvironmentVariable("PX4_GZ_WORLD", "default"),
             bag_recorder,
-            px4_process,
-            TimerAction(period=5.0, actions=[nav3d_bringup]),
             # Subscribe before bringup can arm the vehicle, so the ground pose is captured.
-            TimerAction(period=2.0, actions=[test_node]),
+            test_node,
+            nav3d_bringup,
         ]
     )

@@ -30,6 +30,7 @@ rosidl_generate_interfaces(
     "msg/EdgeCost.msg"
     "msg/Trajectory.msg"
     "msg/TrajectoryPoint.msg"
+    "msg/VehicleState.msg"
     "srv/IsPathValid.srv"
     "srv/ManageLifecycleNodes.srv"
     "srv/LoadMap.srv"

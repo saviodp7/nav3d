@@ -1,0 +1,173 @@
+# =============================================================================
+# MoveIt OMPL planning configuration for x500
+# =============================================================================
+
+planning_plugins:
+  - ompl_interface/OMPLPlanner
+
+# -----------------------------------------------------------------------------
+# REQUEST ADAPTERS (pre-processing BEFORE planning)
+#
+# FixStartStateBounds:
+#   Clamps the start state back into bounds (handles small numeric/TF errors).
+#
+# FixStartStateCollision:
+#   If the start state is in collision, it tries to "jiggle" it into a valid one.
+#   Very useful with imperfect collision geometry or noisy scenes.
+
+# -----------------------------------------------------------------------------
+
+# request_adapters: >-
+#   default_planner_request_adapters/FixStartStateBounds
+#   default_planner_request_adapters/FixStartStateCollision
+
+# -----------------------------------------------------------------------------
+# RESPONSE ADAPTERS (post-processing AFTER planning)
+#
+# ValidateSolution:
+#   Re-checks the final solution validity (collisions, bounds, etc).
+#   Recommended as a safety net.
+# -----------------------------------------------------------------------------
+
+# response_adapters: >-
+#   default_planner_response_adapters/ValidateSolution
+
+# =============================================================================
+# PLANNER CONFIGS
+# =============================================================================
+planner_configs:
+
+  # ---------------------------------------------------------------------------
+  # RRTConnect (geometric::RRTConnect)
+  # Best for:
+  # - Open space / moderate clutter
+  # - Low planning latency, high success rate
+  # ---------------------------------------------------------------------------
+  RRTConnect:
+    type: geometric::RRTConnect
+    range: 0.0                # Max step size
+
+  # ---------------------------------------------------------------------------
+  # RRT (geometric::RRT)
+  # Pros:
+  # - Simple and fast
+  # Cons:
+  # - Often produces rougher/less efficient paths
+  # Best for:
+  # - Mostly open environments
+  # - "Minimal" baseline comparison
+  # ---------------------------------------------------------------------------
+  RRT:
+    type: geometric::RRT
+    range: 0.0
+    goal_bias: 0.5            # Probability of sampling the goal (typical 0.0–0.2), increase when the goal is easy and you want faster convergence
+
+  # ---------------------------------------------------------------------------
+  # RRTstar (geometric::RRTstar)
+  # Pros:
+  # - Asymptotically optimal (improves solution quality with more time)
+  # Cons:
+  # - Slower than RRTConnect
+  # Best for:
+  # - Open / moderate clutter when you care about path quality
+  # - Quality vs time comparisons with fixed planning budget
+  # ---------------------------------------------------------------------------
+  RRTstar:
+    type: geometric::RRTstar
+    range: 0.0
+    goal_bias: 0.05
+    rewire_factor: 1.05        # Rewiring aggressiveness (>= 1.0)
+    # use_k_nearest: false     # false=r-disk, true=k-nearest (can affect performance)
+    # delay_collision_checking: true  # Often speeds up but may change behavior/quality
+
+  # ---------------------------------------------------------------------------
+  # InformedRRTstar (geometric::InformedRRTstar)
+  # Pros:
+  # - Like RRT*, but informed sampling after first solution
+  # - Often improves quality faster than plain RRT*
+  # Cons:
+  # - Needs an initial solution to become very effective
+  # Best for:
+  # - Open / moderate clutter when optimizing quality under a time budget
+  # ---------------------------------------------------------------------------
+  InformedRRTstar:
+    type: geometric::InformedRRTstar
+    range: 0.0
+    goal_bias: 0.05
+    rewire_factor: 1.05
+    # use_k_nearest: false
+    # delay_collision_checking: true
+
+  # ---------------------------------------------------------------------------
+  # PRMstar (geometric::PRMstar)
+  # Pros:
+  # - Great for MANY queries in the same static scene (multi-query)
+  # - Can achieve good quality once the roadmap is built
+  # Cons:
+  # - Higher upfront cost for the first plan (roadmap construction)
+  # Best for:
+  # - Static environments with repeated planning requests
+  # - Benchmarks where you reuse the same map/scene
+  # ---------------------------------------------------------------------------
+  PRMstar:
+    type: geometric::PRMstar
+    max_nearest_neighbors: 15   # Connectivity; higher = more edges but more collision checks
+    # max_nearest_neighbors: 10
+    # max_nearest_neighbors: 30
+
+  # ---------------------------------------------------------------------------
+  # KPIECE1 (geometric::KPIECE1)
+  # Pros:
+  # - Often effective in complex / structured spaces
+  # - Can do well in clutter and narrow passages
+  # Cons:
+  # - More sensitive to tuning, more variable outcomes
+  # Best for:
+  # - Heavy clutter / corridor-like environments / narrow passages
+  # ---------------------------------------------------------------------------
+  KPIECE1:
+    type: geometric::KPIECE1
+    range: 0.0
+    goal_bias: 0.05
+    border_fraction: 0.9        # How much to sample from cell borders (exploration)
+    # min_valid_path_fraction: 0.2  # If supported by your setup
+    # use_projected_distance: false # If supported by your setup
+
+# =============================================================================
+# GROUP CONFIG
+# =============================================================================
+x500_group:
+  default_planner_config: RRTConnect
+  planner_configs:
+    - RRTConnect
+    - RRT
+    - RRTstar
+    - InformedRRTstar
+    - PRMstar
+    - KPIECE1
+
+# =============================================================================
+# GENERAL OMPL / MoveIt SETTINGS (planner-agnostic)
+# =============================================================================
+
+simplify_solutions: true          # Enable path simplification (shortcut/smoothing)
+simplify_solutions_time: 1.0      # Max time (s) spent simplifying
+
+start_state_max_bounds_error: 0.1 # How far the start state can be outside bounds before fixing fails
+jiggle_fraction: 0.02             # Perturbation magnitude used by FixStartStateCollision
+
+max_planning_threads: 0           
+# max_planning_threads: 1         # Recommended for fair planner comparisons
+
+# --- Useful optional settings (commented out) ---
+# max_goal_sampling_attempts: 1000   # Relevant when goal sampling is hard (constraints/goal regions)
+# max_goal_samples: 1000            # Max number of sampled goal states
+# max_solution_segment_length: 0.0  # Segment length cap (0.0 = default)
+# minimum_waypoint_count: 10        # Minimum waypoints in the result path (if supported/needed)
+
+# =============================================================================
+# Benchmarking:
+# - max_planning_threads: 1
+# - simplify_solutions: false
+# - Keep ValidateSolution disenabled
+# =============================================================================

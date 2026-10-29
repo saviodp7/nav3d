@@ -3,7 +3,7 @@
 <package format="3">
   <name>nav3d_gz_bridge</name>
   <version>0.1.0</version>
-  <description>Gazebo (gz) ⇄ ROS 2 bridge and static TFs for Nav3D simulations.</description>
+  <description>Gazebo (gz) ⇄ ROS 2 bridge.</description>
 
   <maintainer email="salvatoredelpeschio@gmail.com">Salvatore Del Peschio</maintainer>
   <license>Apache-2.0</license>
@@ -15,7 +15,6 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>rosgraph_msgs</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>

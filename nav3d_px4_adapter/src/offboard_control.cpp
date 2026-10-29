@@ -17,7 +17,7 @@ static rclcpp::QoS px4Qos() {
         .history(RMW_QOS_POLICY_HISTORY_KEEP_LAST);
 }
 
-OffboardControl::OffboardControl() : rclcpp::Node("offboard_control"), logger_(get_logger()) {
+OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(get_logger()) {
     control_rate_hz_ = declare_parameter<double>("control_rate_hz", 50.0);
     waypoint_timeout_s_ = declare_parameter<double>("waypoint_timeout_s", 1.0);
     offboard_warmup_s_ = declare_parameter<double>("offboard_warmup_s", 1.0);
@@ -36,6 +36,8 @@ OffboardControl::OffboardControl() : rclcpp::Node("offboard_control"), logger_(g
     fmu_in_vehicle_command_ = declare_parameter<std::string>("fmu_in_vehicle_command", fmu_in_vehicle_command_);
 
     fmu_out_vehicle_status_ = declare_parameter<std::string>("fmu_out_vehicle_status", fmu_out_vehicle_status_);
+    fmu_out_vehicle_land_detected_ =
+        declare_parameter<std::string>("fmu_out_vehicle_land_detected", fmu_out_vehicle_land_detected_);
     fmu_out_vehicle_local_position_ =
         declare_parameter<std::string>("fmu_out_vehicle_local_position", fmu_out_vehicle_local_position_);
 
@@ -44,7 +46,11 @@ OffboardControl::OffboardControl() : rclcpp::Node("offboard_control"), logger_(g
     traj_setpoint_pub_ = create_publisher<px4_msgs::msg::TrajectorySetpoint>(fmu_in_traj_setpoint_, px4Qos());
     vehicle_cmd_pub_ = create_publisher<px4_msgs::msg::VehicleCommand>(fmu_in_vehicle_command_, px4Qos());
 
-    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(odom_topic_, 10,
+    odometry_bridge_ = std::make_unique<VioOdometryBridge>(*this);
+
+    rmw_qos_profile_t odom_qos_profile = rmw_qos_profile_sensor_data;
+    auto odom_qos = rclcpp::QoS(rclcpp::QoSInitialization(odom_qos_profile.history, 5), odom_qos_profile);
+    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(odom_topic_, odom_qos,
                                                              std::bind(&OffboardControl::odomCallback, this, _1));
 
     vehicle_local_pos_sub_ = create_subscription<px4_msgs::msg::VehicleLocalPosition>(
@@ -52,6 +58,9 @@ OffboardControl::OffboardControl() : rclcpp::Node("offboard_control"), logger_(g
 
     vehicle_status_sub_ = create_subscription<px4_msgs::msg::VehicleStatus>(
         fmu_out_vehicle_status_, px4Qos(), std::bind(&OffboardControl::vehicleStatusCallback, this, _1));
+
+    vehicle_land_detected_sub_ = create_subscription<px4_msgs::msg::VehicleLandDetected>(
+        fmu_out_vehicle_land_detected_, px4Qos(), std::bind(&OffboardControl::vehicleLandDetectedCallback, this, _1));
 
     auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).best_effort().durability_volatile();
     waypoint_sub_ = create_subscription<nav3d_msgs::msg::TrajectoryPoint>(
@@ -70,8 +79,13 @@ void OffboardControl::vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::
     vehicle_status_ = *msg;
 }
 
+void OffboardControl::vehicleLandDetectedCallback(const px4_msgs::msg::VehicleLandDetected::SharedPtr msg) {
+    vehicle_land_detected_ = *msg;
+}
+
 void OffboardControl::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     current_odom_ = msg;
+    odometry_bridge_->publishOdometry(msg);
     updateOffset();
 }
 

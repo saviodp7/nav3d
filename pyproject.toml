@@ -11,3 +11,4 @@ line-length = 120
 target-version = "py310"
 select = ["E", "F", "I", "B", "UP"]
 fix = true
+cache-dir = "~/.cache/ruff"

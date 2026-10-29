@@ -1,0 +1,23 @@
+services:
+  nav3d:
+    container_name: nav3d-devcontainer
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: nav3d-img
+    privileged: true
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - XAUTHORITY=/tmp/.docker.xauth
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${XAUTHORITY:-/dev/null}:/tmp/.docker.xauth:ro
+      - /dev:/dev
+      - .:/workspaces/nav3d:rw
+    working_dir: /workspaces/nav3d
+    stdin_open: true
+    tty: true
+    command: bash

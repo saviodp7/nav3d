@@ -1,0 +1,80 @@
+{
+  "name": "nav3d",
+  "dockerComposeFile": [
+    "docker-compose.base.yml",
+    "docker-compose.gpu.generated.yml"
+  ],
+  "service": "nav3d",
+  "shutdownAction": "stopCompose",
+  "overrideCommand": true,
+  "remoteUser": "root",
+  "workspaceFolder": "/ros2_ws/src/nav3d",
+  "hostRequirements": {
+    "gpu": "optional"
+  },
+  "initializeCommand": "bash ${localWorkspaceFolder}/.devcontainer/initialize.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Ranch-Hand-Robotics.rde-ros-2",
+        "Ranch-Hand-Robotics.urdf-editor",
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "redhat.vscode-yaml",
+        "shd101wyy.markdown-preview-enhanced",
+        "dotjoshjohnson.xml",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions",
+        "eamodio.gitlens",
+        "vivaxy.vscode-conventional-commits",
+        "usernamehw.errorlens",
+        "xaver.clang-format",
+        "ms-python.black-formatter",
+        "charliermarsh.ruff",
+        "cheshirekow.cmake-format"
+      ],
+      "settings": {
+        "cmake.configureOnOpen": false,
+        "conventionalCommits.autoCommit": false,
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/usr/bin/zsh"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.automationProfile.linux": {
+          "path": "/bin/bash"
+        },
+        "C_Cpp.files.exclude": {
+          "**/PX4-Autopilot/**": true,
+          "**/build/**": true,
+          "**/install/**": true,
+          "**/log/**": true
+        },
+        "C_Cpp.exclusionPolicy": "checkFilesAndFolders",
+        "C_Cpp.workspaceParsingPriority": "low",
+        "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
+        "python.analysis.exclude": [
+          "**/PX4-Autopilot/**",
+          "**/build/**",
+          "**/install/**",
+          "**/log/**"
+        ],
+        "files.watcherExclude": {
+          "**/PX4-Autopilot/**": true,
+          "**/build/**": true,
+          "**/install/**": true,
+          "**/log/**": true
+        },
+        "search.exclude": {
+          "**/PX4-Autopilot/**": true,
+          "**/build/**": true,
+          "**/install/**": true,
+          "**/log/**": true
+        }
+      }
+    }
+  }
+}

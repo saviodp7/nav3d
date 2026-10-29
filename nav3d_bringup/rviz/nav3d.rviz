@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
         - /MotionPlanning1
@@ -53,15 +54,23 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
         base_link:
           Value: true
-        camera_link:
-          Value: false
         map:
           Value: true
+        oakd_depth_frame:
+          Value: false
+        oakd_depth_optical_frame:
+          Value: false
+        oakd_link:
+          Value: false
+        oakd_rgb_optical_frame:
+          Value: false
         odom:
           Value: false
         rotor_0:
@@ -72,19 +81,20 @@ Visualization Manager:
           Value: false
         rotor_3:
           Value: false
-        x500_depth_0/OakD-Lite/base_link/StereoOV7251:
-          Value: false
       Marker Scale: 3
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
         map:
           odom:
             base_link:
-              camera_link:
-                x500_depth_0/OakD-Lite/base_link/StereoOV7251:
+              oakd_link:
+                oakd_depth_frame:
+                  oakd_depth_optical_frame:
+                    {}
+                oakd_rgb_optical_frame:
                   {}
               rotor_0:
                 {}
@@ -123,7 +133,6 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /camera/depth/points
@@ -166,6 +175,22 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          oakd_depth_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          oakd_depth_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          oakd_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          oakd_rgb_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           rotor_0:
             Alpha: 1
             Show Axes: false
@@ -237,6 +262,22 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          oakd_depth_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          oakd_depth_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          oakd_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          oakd_rgb_optical_frame:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           rotor_0:
             Alpha: 1
             Show Axes: false

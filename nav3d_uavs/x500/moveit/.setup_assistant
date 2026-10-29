@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: nav3d_uavs
+    relative_path: x500/description/urdf/x500.urdf
+  srdf:
+    relative_path: config/x500.srdf
+  package_settings:
+    author_name: Salvatore Del Peschio
+    author_email: saviodp7@gmail.com
+    generated_timestamp: 1755173934

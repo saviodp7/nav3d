@@ -35,7 +35,7 @@ namespace nav3d_controller {
 ControllerServer::ControllerServer(const rclcpp::NodeOptions& options)
     : nav3d_util::LifecycleNode("controller_server", "", withAutoDeclaredParams(options)) {
     declare_parameter_if_not_declared(this, "controller_frequency", rclcpp::ParameterValue(50.0));
-    declare_parameter_if_not_declared(this, "waypoint_topic", rclcpp::ParameterValue(std::string("offboard/waypoint")));
+    declare_parameter_if_not_declared(this, "waypoint_topic", rclcpp::ParameterValue(std::string("uav/waypoint")));
 
     declare_parameter_if_not_declared(this, "global_frame", rclcpp::ParameterValue(std::string("map")));
     declare_parameter_if_not_declared(this, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));

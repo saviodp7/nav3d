@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Capture the legacy automatic takeoff without sending a navigation goal."""
+"""Verify the automatic takeoff"""
 
 import json
 import math
@@ -66,9 +66,21 @@ class TakeoffTest(Node):
         self.takeoff_diagnostics = {}
 
         self.create_subscription(Odometry, "/odom", self._odom_callback, sensor_qos)
-        self.create_subscription(VehicleStatus, "/fmu/out/vehicle_status_v1", self._vehicle_status_callback, sensor_qos)
-        self.create_subscription(TrajectorySetpoint, "/fmu/in/trajectory_setpoint", self._setpoint_callback, sensor_qos)
-        self.lifecycle_client = self.create_client(Trigger, "/lifecycle_manager_navigation/is_active")
+        self.create_subscription(
+            VehicleStatus,
+            "/fmu/out/vehicle_status_v1",
+            self._vehicle_status_callback,
+            sensor_qos,
+        )
+        self.create_subscription(
+            TrajectorySetpoint,
+            "/fmu/in/trajectory_setpoint",
+            self._setpoint_callback,
+            sensor_qos,
+        )
+        self.lifecycle_client = self.create_client(
+            Trigger, "/lifecycle_manager_navigation/is_active"
+        )
 
         self.report = {
             "schema_version": 2,
@@ -91,13 +103,19 @@ class TakeoffTest(Node):
         if self.latest_odom is None:
             return None
         position = self.latest_odom.pose.pose.position
-        return PoseSample(position.x, position.y, position.z, self._yaw_from_odometry(self.latest_odom))
+        return PoseSample(
+            position.x,
+            position.y,
+            position.z,
+            self._yaw_from_odometry(self.latest_odom),
+        )
 
     def _capture_initial_pose_if_disarmed(self) -> None:
         if (
             self.initial_pose is None
             and self.latest_vehicle_status is not None
-            and self.latest_vehicle_status.arming_state == VehicleStatus.ARMING_STATE_DISARMED
+            and self.latest_vehicle_status.arming_state
+            == VehicleStatus.ARMING_STATE_DISARMED
         ):
             self.initial_pose = self._pose_sample()
             if self.initial_pose is not None:
@@ -105,7 +123,9 @@ class TakeoffTest(Node):
 
     def _pose_errors(self, pose: PoseSample) -> tuple[float, float]:
         assert self.initial_pose is not None
-        horizontal_drift = math.hypot(pose.x - self.initial_pose.x, pose.y - self.initial_pose.y)
+        horizontal_drift = math.hypot(
+            pose.x - self.initial_pose.x, pose.y - self.initial_pose.y
+        )
         yaw_delta = pose.yaw - self.initial_pose.yaw
         yaw_error = abs(math.atan2(math.sin(yaw_delta), math.cos(yaw_delta)))
         return horizontal_drift, yaw_error
@@ -122,12 +142,15 @@ class TakeoffTest(Node):
         if (
             self.initial_pose is not None
             and self.latest_vehicle_status is not None
-            and self.latest_vehicle_status.arming_state == VehicleStatus.ARMING_STATE_ARMED
+            and self.latest_vehicle_status.arming_state
+            == VehicleStatus.ARMING_STATE_ARMED
         ):
             pose = self._pose_sample()
             assert pose is not None
             horizontal_drift, yaw_error = self._pose_errors(pose)
-            self.max_horizontal_drift_m = max(self.max_horizontal_drift_m, horizontal_drift)
+            self.max_horizontal_drift_m = max(
+                self.max_horizontal_drift_m, horizontal_drift
+            )
             self.max_yaw_error_rad = max(self.max_yaw_error_rad, yaw_error)
 
     def _vehicle_status_callback(self, msg: VehicleStatus) -> None:
@@ -139,21 +162,31 @@ class TakeoffTest(Node):
     def _setpoint_callback(self, _: TrajectorySetpoint) -> None:
         now = time.monotonic()
         if self.setpoint_last_wall is not None:
-            self.setpoint_max_gap_s = max(self.setpoint_max_gap_s, now - self.setpoint_last_wall)
+            self.setpoint_max_gap_s = max(
+                self.setpoint_max_gap_s, now - self.setpoint_last_wall
+            )
         self.setpoint_first_wall = self.setpoint_first_wall or now
         self.setpoint_last_wall = now
         self.setpoint_count += 1
 
-    def _spin_until(self, predicate: Callable[[], bool], timeout_s: float, description: str) -> None:
+    def _spin_until(
+        self, predicate: Callable[[], bool], timeout_s: float, description: str
+    ) -> None:
         deadline = time.monotonic() + timeout_s
         while rclpy.ok() and time.monotonic() < deadline:
             rclpy.spin_once(self, timeout_sec=0.1)
             if predicate():
                 return
-        raise TimeoutError(f"Timeout while waiting for {description} ({timeout_s:.1f}s)")
+        raise TimeoutError(
+            f"Timeout while waiting for {description} ({timeout_s:.1f}s)"
+        )
 
     def _wait_for_lifecycle(self, timeout_s: float) -> None:
-        self._spin_until(self.lifecycle_client.service_is_ready, timeout_s, "lifecycle manager service")
+        self._spin_until(
+            self.lifecycle_client.service_is_ready,
+            timeout_s,
+            "lifecycle manager service",
+        )
         response_future = self.lifecycle_client.call_async(Trigger.Request())
         self._spin_until(response_future.done, timeout_s, "lifecycle manager response")
         response = response_future.result()
@@ -163,7 +196,11 @@ class TakeoffTest(Node):
 
     def _takeoff_conditions(self) -> bool:
         pose = self._pose_sample()
-        if pose is None or self.initial_pose is None or self.latest_vehicle_status is None:
+        if (
+            pose is None
+            or self.initial_pose is None
+            or self.latest_vehicle_status is None
+        ):
             return False
 
         status = self.latest_vehicle_status
@@ -171,8 +208,12 @@ class TakeoffTest(Node):
         horizontal_drift, yaw_error = self._pose_errors(pose)
         vertical_speed = abs(self.latest_odom.twist.twist.linear.z)
         minimum_climb = float(self.get_parameter("minimum_takeoff_climb_m").value)
-        speed_tolerance = float(self.get_parameter("takeoff_vertical_speed_tolerance").value)
-        maximum_horizontal_drift = float(self.get_parameter("maximum_horizontal_drift_m").value)
+        speed_tolerance = float(
+            self.get_parameter("takeoff_vertical_speed_tolerance").value
+        )
+        maximum_horizontal_drift = float(
+            self.get_parameter("maximum_horizontal_drift_m").value
+        )
         maximum_yaw_error = float(self.get_parameter("maximum_yaw_error_rad").value)
         conditions = {
             "armed": status.arming_state == VehicleStatus.ARMING_STATE_ARMED,
@@ -197,7 +238,9 @@ class TakeoffTest(Node):
         return all(conditions.values())
 
     def _wait_for_takeoff(self, timeout_s: float) -> None:
-        stability_duration = float(self.get_parameter("takeoff_stability_duration_s").value)
+        stability_duration = float(
+            self.get_parameter("takeoff_stability_duration_s").value
+        )
         stable_since: float | None = None
         last_diagnostic_log = 0.0
 
@@ -222,7 +265,9 @@ class TakeoffTest(Node):
         self._spin_until(takeoff_is_stable, timeout_s, "stable automatic takeoff")
 
     @staticmethod
-    def _message_rate(count: int, first: float | None, last: float | None) -> float | None:
+    def _message_rate(
+        count: int, first: float | None, last: float | None
+    ) -> float | None:
         if count < 2 or first is None or last is None or last <= first:
             return None
         return (count - 1) / (last - first)
@@ -237,14 +282,18 @@ class TakeoffTest(Node):
     def run(self) -> bool:
         readiness_timeout = float(self.get_parameter("readiness_timeout_s").value)
         takeoff_timeout = float(self.get_parameter("takeoff_timeout_s").value)
-        observation_duration = float(self.get_parameter("post_takeoff_observation_s").value)
+        observation_duration = float(
+            self.get_parameter("post_takeoff_observation_s").value
+        )
         scenario_start = time.monotonic()
         try:
             self.get_logger().info("Waiting for Nav3D lifecycle nodes...")
             self._wait_for_lifecycle(readiness_timeout)
             self.report["checks"]["lifecycle_active"] = True
 
-            self.get_logger().info("Waiting for initial disarmed pose, PX4 status and outgoing setpoints...")
+            self.get_logger().info(
+                "Waiting for initial disarmed pose, PX4 status and outgoing setpoints..."
+            )
             self._spin_until(
                 lambda: self.initial_pose is not None
                 and self.latest_odom is not None
@@ -263,31 +312,55 @@ class TakeoffTest(Node):
             takeoff_pose = self._pose_sample()
             self.report["takeoff_pose"] = asdict(takeoff_pose) if takeoff_pose else None
             if takeoff_pose is not None:
-                self.report["metrics"]["takeoff_climb_m"] = takeoff_pose.z - self.initial_pose.z
+                self.report["metrics"]["takeoff_climb_m"] = (
+                    takeoff_pose.z - self.initial_pose.z
+                )
             self.report["checks"]["takeoff_complete"] = True
 
             # Observe a short hover; this test never creates a navigation action client.
             observation_start = time.monotonic()
             odom_count_at_start = self.odom_count
             setpoint_count_at_start = self.setpoint_count
-            while rclpy.ok() and time.monotonic() - observation_start < observation_duration:
+            while (
+                rclpy.ok()
+                and time.monotonic() - observation_start < observation_duration
+            ):
                 rclpy.spin_once(self, timeout_sec=0.1)
                 if not self._takeoff_conditions():
-                    raise RuntimeError("Automatic takeoff conditions were lost during hover")
+                    raise RuntimeError(
+                        "Automatic takeoff conditions were lost during hover"
+                    )
             if not rclpy.ok():
                 raise RuntimeError("ROS shut down during post-takeoff hover")
-            if self.odom_count == odom_count_at_start or self.setpoint_count == setpoint_count_at_start:
-                raise RuntimeError("Odometry or trajectory setpoints stopped during hover")
-            if self.max_horizontal_drift_m > float(self.get_parameter("maximum_horizontal_drift_m").value):
-                raise RuntimeError(f"Horizontal drift exceeded limit: {self.max_horizontal_drift_m:.3f}m")
-            if self.max_yaw_error_rad > float(self.get_parameter("maximum_yaw_error_rad").value):
-                raise RuntimeError(f"Yaw error exceeded limit: {self.max_yaw_error_rad:.3f}rad")
+            if (
+                self.odom_count == odom_count_at_start
+                or self.setpoint_count == setpoint_count_at_start
+            ):
+                raise RuntimeError(
+                    "Odometry or trajectory setpoints stopped during hover"
+                )
+            if self.max_horizontal_drift_m > float(
+                self.get_parameter("maximum_horizontal_drift_m").value
+            ):
+                raise RuntimeError(
+                    f"Horizontal drift exceeded limit: {self.max_horizontal_drift_m:.3f}m"
+                )
+            if self.max_yaw_error_rad > float(
+                self.get_parameter("maximum_yaw_error_rad").value
+            ):
+                raise RuntimeError(
+                    f"Yaw error exceeded limit: {self.max_yaw_error_rad:.3f}rad"
+                )
             self.report["checks"]["post_takeoff_hover_stable"] = True
-            self.report["metrics"]["post_takeoff_observation_s"] = time.monotonic() - observation_start
+            self.report["metrics"]["post_takeoff_observation_s"] = (
+                time.monotonic() - observation_start
+            )
             self.report["passed"] = True
-            self.get_logger().info("SYSTEM TEST PASSED: automatic takeoff in default world")
+            self.get_logger().info(
+                "SYSTEM TEST PASSED: automatic takeoff in default world"
+            )
             return True
-        except Exception as exc:  # noqa: BLE001 - the report must capture every system-test failure
+        except Exception as exc:
             self.report["failure"] = {
                 "type": type(exc).__name__,
                 "message": str(exc),
@@ -297,7 +370,9 @@ class TakeoffTest(Node):
             return False
         finally:
             current_pose = self._pose_sample()
-            self.report["last_observed_pose"] = asdict(current_pose) if current_pose else None
+            self.report["last_observed_pose"] = (
+                asdict(current_pose) if current_pose else None
+            )
             if self.latest_vehicle_status is not None:
                 self.report["last_vehicle_status"] = {
                     "arming_state": int(self.latest_vehicle_status.arming_state),
@@ -305,9 +380,13 @@ class TakeoffTest(Node):
                     "failsafe": bool(self.latest_vehicle_status.failsafe),
                 }
             self.report["takeoff_diagnostics"] = self.takeoff_diagnostics
-            self.report["metrics"]["max_horizontal_drift_m"] = self.max_horizontal_drift_m
+            self.report["metrics"][
+                "max_horizontal_drift_m"
+            ] = self.max_horizontal_drift_m
             self.report["metrics"]["max_yaw_error_rad"] = self.max_yaw_error_rad
-            self.report["metrics"]["scenario_wall_duration_s"] = time.monotonic() - scenario_start
+            self.report["metrics"]["scenario_wall_duration_s"] = (
+                time.monotonic() - scenario_start
+            )
             self.report["metrics"]["odom_messages"] = self.odom_count
             self.report["metrics"]["odom_rate_hz"] = self._message_rate(
                 self.odom_count, self.odom_first_wall, self.odom_last_wall
@@ -317,7 +396,9 @@ class TakeoffTest(Node):
             self.report["metrics"]["trajectory_setpoint_rate_hz"] = self._message_rate(
                 self.setpoint_count, self.setpoint_first_wall, self.setpoint_last_wall
             )
-            self.report["metrics"]["trajectory_setpoint_max_gap_s"] = self.setpoint_max_gap_s
+            self.report["metrics"][
+                "trajectory_setpoint_max_gap_s"
+            ] = self.setpoint_max_gap_s
             self._write_report()
             self.get_logger().info(f"Report written to {self.report_file}")
 

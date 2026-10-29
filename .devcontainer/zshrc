@@ -1,0 +1,10 @@
+autoload -Uz compinit
+compinit
+
+if [[ -f /opt/ros/jazzy/setup.zsh ]]; then
+  source /opt/ros/jazzy/setup.zsh
+fi
+
+if [[ -f /ros2_ws/install/setup.zsh ]]; then
+  source /ros2_ws/install/setup.zsh
+fi

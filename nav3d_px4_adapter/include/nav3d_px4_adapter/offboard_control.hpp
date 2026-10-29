@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nav3d_px4_adapter/vio_odometry_bridge.hpp"
+
 #include <atomic>
 #include <cmath>
 #include <geometry_msgs/msg/pose.hpp>
@@ -12,6 +14,7 @@
 #include <px4_msgs/msg/offboard_control_mode.hpp>
 #include <px4_msgs/msg/trajectory_setpoint.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
+#include <px4_msgs/msg/vehicle_land_detected.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -40,6 +43,7 @@ class OffboardControl final : public rclcpp::Node {
 
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
     void vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg);
+    void vehicleLandDetectedCallback(const px4_msgs::msg::VehicleLandDetected::SharedPtr msg);
     void vehicleLocalPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg);
     void waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::SharedPtr msg);
 
@@ -63,7 +67,7 @@ class OffboardControl final : public rclcpp::Node {
 
     void fillPositionVelocityFields(px4_msgs::msg::TrajectorySetpoint& msg);
 
-    rclcpp::Logger logger_{rclcpp::get_logger("offboard_control")};
+    rclcpp::Logger logger_{rclcpp::get_logger("nav3d_px4_adapter")};
 
     rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr offboard_control_mode_pub_;
     rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr traj_setpoint_pub_;
@@ -72,13 +76,16 @@ class OffboardControl final : public rclcpp::Node {
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr vehicle_local_pos_sub_;
     rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr vehicle_status_sub_;
+    rclcpp::Subscription<px4_msgs::msg::VehicleLandDetected>::SharedPtr vehicle_land_detected_sub_;
     rclcpp::Subscription<nav3d_msgs::msg::TrajectoryPoint>::SharedPtr waypoint_sub_;
+    std::unique_ptr<VioOdometryBridge> odometry_bridge_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
     nav_msgs::msg::Odometry::SharedPtr current_odom_;
     px4_msgs::msg::VehicleLocalPosition::SharedPtr current_local_pos_;
     px4_msgs::msg::VehicleStatus vehicle_status_{};
+    std::optional<px4_msgs::msg::VehicleLandDetected> vehicle_land_detected_;
 
     Offset odom_to_px4_offset_{};
     double offset_alpha_{0.01};
@@ -102,13 +109,14 @@ class OffboardControl final : public rclcpp::Node {
     rclcpp::Time last_offboard_command_time_{rclcpp::Time(0, 0, RCL_ROS_TIME)};
 
     std::string odom_topic_{"/odom"};
-    std::string waypoint_topic_{"/offboard/waypoint"};
+    std::string waypoint_topic_{"uav/waypoint"};
 
     std::string fmu_in_offboard_control_mode_{"/fmu/in/offboard_control_mode"};
     std::string fmu_in_traj_setpoint_{"/fmu/in/trajectory_setpoint"};
     std::string fmu_in_vehicle_command_{"/fmu/in/vehicle_command"};
 
     std::string fmu_out_vehicle_status_{"/fmu/out/vehicle_status_v1"};
+    std::string fmu_out_vehicle_land_detected_{"/fmu/out/vehicle_land_detected"};
     std::string fmu_out_vehicle_local_position_{"/fmu/out/vehicle_local_position"};
 };
 

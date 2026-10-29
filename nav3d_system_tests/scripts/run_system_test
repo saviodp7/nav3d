@@ -10,7 +10,7 @@ fi
 case "${scenario}" in
   takeoff_test)
     if gz topic -l | grep -Eq '^/world/.*/clock$'; then
-      echo "A Gazebo world is already running; stop it before the baseline test." >&2
+      echo "A Gazebo world is already running; stop it before the takeoff test." >&2
       exit 3
     fi
     exec ros2 launch nav3d_system_tests takeoff_test.launch.py "$@"

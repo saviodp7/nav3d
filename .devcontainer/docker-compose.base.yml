@@ -1,0 +1,20 @@
+services:
+  nav3d:
+    image: nav3d-img
+    privileged: true
+    network_mode: host
+    ipc: host
+    environment:
+      DISPLAY: ${DISPLAY:-:0}
+      XAUTHORITY: /tmp/.docker.xauth
+      QT_X11_NO_MITSHM: "1"
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      NAV3D_WORKSPACE_ROOT: /ros2_ws
+    volumes:
+      - ../../ros2_ws:/ros2_ws:cached
+      - ..:/ros2_ws/src/nav3d:cached
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ./.docker.xauth:/tmp/.docker.xauth:ro
+      - /dev:/dev
+    working_dir: /ros2_ws
+    command: sleep infinity
