@@ -3,12 +3,14 @@
 #include "nav3d_px4_adapter/vio_odometry_bridge.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <limits>
 #include <memory>
 #include <nav3d_msgs/msg/trajectory_point.hpp>
+#include <nav3d_msgs/msg/vehicle_state.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <optional>
 #include <px4_msgs/msg/offboard_control_mode.hpp>
@@ -48,6 +50,7 @@ class OffboardControl final : public rclcpp::Node {
     void waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::SharedPtr msg);
 
     void timerCallback();
+    void publishVehicleState();
 
     void updateOffset();
     geometry_msgs::msg::Pose enuToNedPose(const geometry_msgs::msg::Pose& enu_pose) const;
@@ -72,6 +75,7 @@ class OffboardControl final : public rclcpp::Node {
     rclcpp::Publisher<px4_msgs::msg::OffboardControlMode>::SharedPtr offboard_control_mode_pub_;
     rclcpp::Publisher<px4_msgs::msg::TrajectorySetpoint>::SharedPtr traj_setpoint_pub_;
     rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr vehicle_cmd_pub_;
+    rclcpp::Publisher<nav3d_msgs::msg::VehicleState>::SharedPtr vehicle_state_pub_;
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr vehicle_local_pos_sub_;
@@ -81,11 +85,18 @@ class OffboardControl final : public rclcpp::Node {
     std::unique_ptr<VioOdometryBridge> odometry_bridge_;
 
     rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr vehicle_state_timer_;
 
     nav_msgs::msg::Odometry::SharedPtr current_odom_;
     px4_msgs::msg::VehicleLocalPosition::SharedPtr current_local_pos_;
     px4_msgs::msg::VehicleStatus vehicle_status_{};
     std::optional<px4_msgs::msg::VehicleLandDetected> vehicle_land_detected_;
+    nav3d_msgs::msg::VehicleState vehicle_state_{};
+    std::optional<std::chrono::steady_clock::time_point> vehicle_status_received_at_;
+    std::optional<std::chrono::steady_clock::time_point> vehicle_land_detected_received_at_;
+    double vehicle_status_timeout_s_{2.0};
+    double vehicle_land_detected_timeout_s_{2.0};
+    double vehicle_state_rate_hz_{2.0};
 
     Offset odom_to_px4_offset_{};
     double offset_alpha_{0.01};
@@ -110,6 +121,7 @@ class OffboardControl final : public rclcpp::Node {
 
     std::string odom_topic_{"/odom"};
     std::string waypoint_topic_{"uav/waypoint"};
+    std::string vehicle_state_topic_{"uav/state"};
 
     std::string fmu_in_offboard_control_mode_{"/fmu/in/offboard_control_mode"};
     std::string fmu_in_traj_setpoint_{"/fmu/in/trajectory_setpoint"};

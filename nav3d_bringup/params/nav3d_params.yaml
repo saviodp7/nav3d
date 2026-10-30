@@ -30,6 +30,10 @@ controller_server:
 nav3d_px4_adapter:
   ros__parameters:
     control_rate_hz: 50.0
+    vehicle_state_rate_hz: 2.0
+    vehicle_status_timeout_s: 2.0
+    vehicle_land_detected_timeout_s: 2.0
+    vehicle_state_topic: "uav/state"
     waypoint_topic: "uav/waypoint"
     waypoint_timeout_s: 1.0
     offboard_warmup_s: 1.0

@@ -12,11 +12,10 @@ uint8 ON_GROUND=1
 uint8 IN_AIR=2
 uint8 ground_state
 
-# EXTERNAL_CONTROL means a flight controller such as PX4 executes the commands;
-# DIRECT_CONTROL is reserved for a future controller operating directly on the actuators.
 uint8 CONTROL_UNKNOWN=0
 uint8 DIRECT_CONTROL=1
-uint8 EXTERNAL_CONTROL=2
+uint8 PX4_CONTROL=2
+uint8 CONTROL_OVERRIDE=3
 uint8 control_state
 
 # failsafe_state.

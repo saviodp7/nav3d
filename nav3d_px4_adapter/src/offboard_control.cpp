@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <stdexcept>
 #include <tf2/utils.h>
 
 using namespace std::chrono_literals;
@@ -18,7 +19,12 @@ static rclcpp::QoS px4Qos() {
 }
 
 OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(get_logger()) {
+    vehicle_state_.control_state = nav3d_msgs::msg::VehicleState::PX4_CONTROL;
+
     control_rate_hz_ = declare_parameter<double>("control_rate_hz", 50.0);
+    vehicle_state_rate_hz_ = declare_parameter<double>("vehicle_state_rate_hz", 2.0);
+    vehicle_status_timeout_s_ = declare_parameter<double>("vehicle_status_timeout_s", 2.0);
+    vehicle_land_detected_timeout_s_ = declare_parameter<double>("vehicle_land_detected_timeout_s", 2.0);
     waypoint_timeout_s_ = declare_parameter<double>("waypoint_timeout_s", 1.0);
     offboard_warmup_s_ = declare_parameter<double>("offboard_warmup_s", 1.0);
     offboard_command_retry_s_ = declare_parameter<double>("offboard_command_retry_s", 1.0);
@@ -29,6 +35,13 @@ OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(
 
     odom_topic_ = declare_parameter<std::string>("odom_topic", odom_topic_);
     waypoint_topic_ = declare_parameter<std::string>("waypoint_topic", waypoint_topic_);
+    vehicle_state_topic_ = declare_parameter<std::string>("vehicle_state_topic", vehicle_state_topic_);
+
+    if (!std::isfinite(vehicle_state_rate_hz_) || vehicle_state_rate_hz_ <= 0.0 ||
+        !std::isfinite(vehicle_status_timeout_s_) || vehicle_status_timeout_s_ <= 0.0 ||
+        !std::isfinite(vehicle_land_detected_timeout_s_) || vehicle_land_detected_timeout_s_ <= 0.0) {
+        throw std::invalid_argument("Vehicle state rate and timeouts must be finite and positive");
+    }
 
     fmu_in_offboard_control_mode_ =
         declare_parameter<std::string>("fmu_in_offboard_control_mode", fmu_in_offboard_control_mode_);
@@ -45,6 +58,8 @@ OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(
         create_publisher<px4_msgs::msg::OffboardControlMode>(fmu_in_offboard_control_mode_, px4Qos());
     traj_setpoint_pub_ = create_publisher<px4_msgs::msg::TrajectorySetpoint>(fmu_in_traj_setpoint_, px4Qos());
     vehicle_cmd_pub_ = create_publisher<px4_msgs::msg::VehicleCommand>(fmu_in_vehicle_command_, px4Qos());
+    vehicle_state_pub_ = create_publisher<nav3d_msgs::msg::VehicleState>(
+        vehicle_state_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile());
 
     odometry_bridge_ = std::make_unique<VioOdometryBridge>(*this);
 
@@ -69,6 +84,9 @@ OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double>(1.0 / std::max(1e-3, control_rate_hz_)));
     timer_ = create_wall_timer(period, std::bind(&OffboardControl::timerCallback, this));
+    const auto state_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::duration<double>(1.0 / vehicle_state_rate_hz_));
+    vehicle_state_timer_ = create_wall_timer(state_period, std::bind(&OffboardControl::publishVehicleState, this));
 }
 
 void OffboardControl::vehicleLocalPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
@@ -77,10 +95,47 @@ void OffboardControl::vehicleLocalPositionCallback(const px4_msgs::msg::VehicleL
 
 void OffboardControl::vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
     vehicle_status_ = *msg;
+    vehicle_status_received_at_ = std::chrono::steady_clock::now();
+    switch (msg->arming_state) {
+    case px4_msgs::msg::VehicleStatus::ARMING_STATE_DISARMED:
+        vehicle_state_.arming_state = nav3d_msgs::msg::VehicleState::DISARMED;
+        break;
+    case px4_msgs::msg::VehicleStatus::ARMING_STATE_ARMED:
+        vehicle_state_.arming_state = nav3d_msgs::msg::VehicleState::ARMED;
+        break;
+    default:
+        vehicle_state_.arming_state = nav3d_msgs::msg::VehicleState::ARMING_UNKNOWN;
+        break;
+    }
+    vehicle_state_.failsafe_state = msg->failsafe ? nav3d_msgs::msg::VehicleState::FAILSAFE_ACTIVE
+                                                  : nav3d_msgs::msg::VehicleState::FAILSAFE_INACTIVE;
 }
 
 void OffboardControl::vehicleLandDetectedCallback(const px4_msgs::msg::VehicleLandDetected::SharedPtr msg) {
     vehicle_land_detected_ = *msg;
+    vehicle_land_detected_received_at_ = std::chrono::steady_clock::now();
+    vehicle_state_.ground_state =
+        msg->landed ? nav3d_msgs::msg::VehicleState::ON_GROUND : nav3d_msgs::msg::VehicleState::IN_AIR;
+}
+
+void OffboardControl::publishVehicleState() {
+    const auto now = std::chrono::steady_clock::now();
+    auto state = vehicle_state_;
+    state.header.stamp = get_clock()->now();
+
+    if (!vehicle_status_received_at_ ||
+        std::chrono::duration<double>(now - *vehicle_status_received_at_).count() >= vehicle_status_timeout_s_) {
+        state.arming_state = nav3d_msgs::msg::VehicleState::ARMING_UNKNOWN;
+        state.failsafe_state = nav3d_msgs::msg::VehicleState::FAILSAFE_UNKNOWN;
+    }
+
+    if (!vehicle_land_detected_received_at_ ||
+        std::chrono::duration<double>(now - *vehicle_land_detected_received_at_).count() >=
+            vehicle_land_detected_timeout_s_) {
+        state.ground_state = nav3d_msgs::msg::VehicleState::GROUND_UNKNOWN;
+    }
+
+    vehicle_state_pub_->publish(state);
 }
 
 void OffboardControl::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
