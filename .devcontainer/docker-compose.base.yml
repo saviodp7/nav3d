@@ -11,10 +11,23 @@ services:
       RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
       NAV3D_WORKSPACE_ROOT: /ros2_ws
     volumes:
-      - ../../ros2_ws:/ros2_ws:cached
-      - ..:/ros2_ws/src/nav3d:cached
+      - type: bind
+        source: ../../ros2_ws
+        target: /ros2_ws
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ..
+        target: /ros2_ws/src/nav3d
+        bind:
+          create_host_path: false
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
-      - ./.docker.xauth:/tmp/.docker.xauth:ro
+      - type: bind
+        source: ./.docker.xauth
+        target: /tmp/.docker.xauth
+        read_only: true
+        bind:
+          create_host_path: false
       - /dev:/dev
     working_dir: /ros2_ws
     command: sleep infinity
