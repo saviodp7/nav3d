@@ -27,9 +27,9 @@
 
 namespace nav3d_px4_adapter {
 
-class OffboardControl final : public rclcpp::Node {
+class Nav3dPx4Adapter final : public rclcpp::Node {
   public:
-    OffboardControl();
+    explicit Nav3dPx4Adapter(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
   private:
     struct Offset {

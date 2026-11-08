@@ -1,4 +1,4 @@
-#include "nav3d_px4_adapter/offboard_control.hpp"
+#include "nav3d_px4_adapter/nav3d_px4_adapter.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -18,9 +18,8 @@ static rclcpp::QoS px4Qos() {
         .history(RMW_QOS_POLICY_HISTORY_KEEP_LAST);
 }
 
-OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(get_logger()) {
-    vehicle_state_.control_state = nav3d_msgs::msg::VehicleState::PX4_CONTROL;
-
+Nav3dPx4Adapter::Nav3dPx4Adapter(const rclcpp::NodeOptions& options)
+    : rclcpp::Node("nav3d_px4_adapter", options), logger_(get_logger()) {
     control_rate_hz_ = declare_parameter<double>("control_rate_hz", 50.0);
     vehicle_state_rate_hz_ = declare_parameter<double>("vehicle_state_rate_hz", 2.0);
     vehicle_status_timeout_s_ = declare_parameter<double>("vehicle_status_timeout_s", 2.0);
@@ -66,34 +65,34 @@ OffboardControl::OffboardControl() : rclcpp::Node("nav3d_px4_adapter"), logger_(
     rmw_qos_profile_t odom_qos_profile = rmw_qos_profile_sensor_data;
     auto odom_qos = rclcpp::QoS(rclcpp::QoSInitialization(odom_qos_profile.history, 5), odom_qos_profile);
     odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(odom_topic_, odom_qos,
-                                                             std::bind(&OffboardControl::odomCallback, this, _1));
+                                                             std::bind(&Nav3dPx4Adapter::odomCallback, this, _1));
 
     vehicle_local_pos_sub_ = create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-        fmu_out_vehicle_local_position_, px4Qos(), std::bind(&OffboardControl::vehicleLocalPositionCallback, this, _1));
+        fmu_out_vehicle_local_position_, px4Qos(), std::bind(&Nav3dPx4Adapter::vehicleLocalPositionCallback, this, _1));
 
     vehicle_status_sub_ = create_subscription<px4_msgs::msg::VehicleStatus>(
-        fmu_out_vehicle_status_, px4Qos(), std::bind(&OffboardControl::vehicleStatusCallback, this, _1));
+        fmu_out_vehicle_status_, px4Qos(), std::bind(&Nav3dPx4Adapter::vehicleStatusCallback, this, _1));
 
     vehicle_land_detected_sub_ = create_subscription<px4_msgs::msg::VehicleLandDetected>(
-        fmu_out_vehicle_land_detected_, px4Qos(), std::bind(&OffboardControl::vehicleLandDetectedCallback, this, _1));
+        fmu_out_vehicle_land_detected_, px4Qos(), std::bind(&Nav3dPx4Adapter::vehicleLandDetectedCallback, this, _1));
 
     auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).best_effort().durability_volatile();
     waypoint_sub_ = create_subscription<nav3d_msgs::msg::TrajectoryPoint>(
-        waypoint_topic_, qos, std::bind(&OffboardControl::waypointCallback, this, _1));
+        waypoint_topic_, qos, std::bind(&Nav3dPx4Adapter::waypointCallback, this, _1));
 
     const auto period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double>(1.0 / std::max(1e-3, control_rate_hz_)));
-    timer_ = create_wall_timer(period, std::bind(&OffboardControl::timerCallback, this));
+    timer_ = create_wall_timer(period, std::bind(&Nav3dPx4Adapter::timerCallback, this));
     const auto state_period = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::duration<double>(1.0 / vehicle_state_rate_hz_));
-    vehicle_state_timer_ = create_wall_timer(state_period, std::bind(&OffboardControl::publishVehicleState, this));
+    vehicle_state_timer_ = create_wall_timer(state_period, std::bind(&Nav3dPx4Adapter::publishVehicleState, this));
 }
 
-void OffboardControl::vehicleLocalPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
+void Nav3dPx4Adapter::vehicleLocalPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
     current_local_pos_ = msg;
 }
 
-void OffboardControl::vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
+void Nav3dPx4Adapter::vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
     vehicle_status_ = *msg;
     vehicle_status_received_at_ = std::chrono::steady_clock::now();
     switch (msg->arming_state) {
@@ -111,22 +110,25 @@ void OffboardControl::vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::
                                                   : nav3d_msgs::msg::VehicleState::FAILSAFE_INACTIVE;
 }
 
-void OffboardControl::vehicleLandDetectedCallback(const px4_msgs::msg::VehicleLandDetected::SharedPtr msg) {
+void Nav3dPx4Adapter::vehicleLandDetectedCallback(const px4_msgs::msg::VehicleLandDetected::SharedPtr msg) {
     vehicle_land_detected_ = *msg;
     vehicle_land_detected_received_at_ = std::chrono::steady_clock::now();
     vehicle_state_.ground_state =
         msg->landed ? nav3d_msgs::msg::VehicleState::ON_GROUND : nav3d_msgs::msg::VehicleState::IN_AIR;
 }
 
-void OffboardControl::publishVehicleState() {
+void Nav3dPx4Adapter::publishVehicleState() {
     const auto now = std::chrono::steady_clock::now();
     auto state = vehicle_state_;
     state.header.stamp = get_clock()->now();
+    state.control_state = nav3d_msgs::msg::VehicleState::CONTROL_UNKNOWN;
 
     if (!vehicle_status_received_at_ ||
         std::chrono::duration<double>(now - *vehicle_status_received_at_).count() >= vehicle_status_timeout_s_) {
         state.arming_state = nav3d_msgs::msg::VehicleState::ARMING_UNKNOWN;
         state.failsafe_state = nav3d_msgs::msg::VehicleState::FAILSAFE_UNKNOWN;
+    } else if (vehicle_status_.nav_state == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_OFFBOARD) {
+        state.control_state = nav3d_msgs::msg::VehicleState::PX4_CONTROL;
     }
 
     if (!vehicle_land_detected_received_at_ ||
@@ -138,13 +140,13 @@ void OffboardControl::publishVehicleState() {
     vehicle_state_pub_->publish(state);
 }
 
-void OffboardControl::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void Nav3dPx4Adapter::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     current_odom_ = msg;
     odometry_bridge_->publishOdometry(msg);
     updateOffset();
 }
 
-void OffboardControl::updateOffset() {
+void Nav3dPx4Adapter::updateOffset() {
     if (!current_odom_ || !current_local_pos_) {
         return;
     }
@@ -167,7 +169,7 @@ void OffboardControl::updateOffset() {
     odom_to_px4_offset_.z = a * ez + (1.0 - a) * odom_to_px4_offset_.z;
 }
 
-geometry_msgs::msg::Pose OffboardControl::enuToNedPose(const geometry_msgs::msg::Pose& enu_pose) const {
+geometry_msgs::msg::Pose Nav3dPx4Adapter::enuToNedPose(const geometry_msgs::msg::Pose& enu_pose) const {
     geometry_msgs::msg::Pose ned_pose;
     ned_pose.position.x = enu_pose.position.y;
     ned_pose.position.y = enu_pose.position.x;
@@ -192,7 +194,7 @@ geometry_msgs::msg::Pose OffboardControl::enuToNedPose(const geometry_msgs::msg:
     return ned_pose;
 }
 
-void OffboardControl::fillPositionVelocityFields(px4_msgs::msg::TrajectorySetpoint& msg) {
+void Nav3dPx4Adapter::fillPositionVelocityFields(px4_msgs::msg::TrajectorySetpoint& msg) {
     const float nan = std::numeric_limits<float>::quiet_NaN();
     msg.acceleration[0] = nan;
     msg.acceleration[1] = nan;
@@ -203,7 +205,7 @@ void OffboardControl::fillPositionVelocityFields(px4_msgs::msg::TrajectorySetpoi
     msg.yawspeed = nan;
 }
 
-void OffboardControl::waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::SharedPtr msg) {
+void Nav3dPx4Adapter::waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::SharedPtr msg) {
     last_valid_setpoint_enu_ =
         EnuSetpoint{msg->pose, msg->velocity_valid ? msg->velocity : geometry_msgs::msg::Twist{}};
     last_waypoint_time_ = get_clock()->now();
@@ -234,7 +236,7 @@ void OffboardControl::waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::S
     }
 }
 
-void OffboardControl::publishOffboardControlHeartbeat() {
+void Nav3dPx4Adapter::publishOffboardControlHeartbeat() {
     px4_msgs::msg::OffboardControlMode msg{};
     msg.position = true;
     msg.velocity = true;
@@ -245,7 +247,7 @@ void OffboardControl::publishOffboardControlHeartbeat() {
     offboard_control_mode_pub_->publish(msg);
 }
 
-void OffboardControl::publishVehicleCommand(uint16_t command, float param1, float param2, float param3, float param4,
+void Nav3dPx4Adapter::publishVehicleCommand(uint16_t command, float param1, float param2, float param3, float param4,
                                             float param5, float param6, float param7) {
     px4_msgs::msg::VehicleCommand msg{};
     msg.command = command;
@@ -267,19 +269,19 @@ void OffboardControl::publishVehicleCommand(uint16_t command, float param1, floa
     vehicle_cmd_pub_->publish(msg);
 }
 
-void OffboardControl::arm() {
+void Nav3dPx4Adapter::arm() {
     publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 1.0f);
 }
 
-void OffboardControl::disarm() {
+void Nav3dPx4Adapter::disarm() {
     publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_COMPONENT_ARM_DISARM, 0.0f);
 }
 
-void OffboardControl::engageOffboardMode() {
+void Nav3dPx4Adapter::engageOffboardMode() {
     publishVehicleCommand(px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_SET_MODE, 1.0f, 6.0f);
 }
 
-void OffboardControl::publishTakeoffSetpoint() {
+void Nav3dPx4Adapter::publishTakeoffSetpoint() {
     if (!current_odom_) {
         return;
     }
@@ -332,7 +334,7 @@ void OffboardControl::publishTakeoffSetpoint() {
     traj_setpoint_pub_->publish(msg);
 }
 
-bool OffboardControl::isTakeoffComplete() {
+bool Nav3dPx4Adapter::isTakeoffComplete() {
     if (!current_odom_ || !takeoff_target_altitude_) {
         return false;
     }
@@ -347,7 +349,7 @@ bool OffboardControl::isTakeoffComplete() {
     return takeoff_completed_;
 }
 
-void OffboardControl::publishHoverSetpoint() {
+void Nav3dPx4Adapter::publishHoverSetpoint() {
     if (!last_valid_setpoint_enu_) {
         return;
     }
@@ -373,7 +375,7 @@ void OffboardControl::publishHoverSetpoint() {
     traj_setpoint_pub_->publish(msg);
 }
 
-void OffboardControl::timerCallback() {
+void Nav3dPx4Adapter::timerCallback() {
     const auto now = get_clock()->now();
 
     publishOffboardControlHeartbeat();

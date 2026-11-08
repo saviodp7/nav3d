@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build, unit tests and takeoff
+    name: Build, package tests and takeoff
     runs-on: ubuntu-24.04
     timeout-minutes: 90
 
@@ -38,14 +38,14 @@ jobs:
             nav3d-ci \
             bash /workspaces/nav3d/.github/scripts/build_ci.sh
 
-      - name: 2. Run Nav3D unit tests
+      - name: 2. Run Nav3D package tests
         shell: bash
         run: |
           docker run --rm --shm-size=1g \
             --volume "${GITHUB_WORKSPACE}:/workspaces/nav3d" \
             --workdir /workspaces/nav3d \
             nav3d-ci \
-            bash /workspaces/nav3d/.github/scripts/run_unit_tests.sh
+            bash /workspaces/nav3d/.github/scripts/run_package_tests.sh
 
       - name: 3. Run takeoff integration test
         shell: bash

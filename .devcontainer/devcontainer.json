@@ -13,10 +13,11 @@
     "gpu": "optional"
   },
   "initializeCommand": "bash ${localWorkspaceFolder}/.devcontainer/initialize.sh",
+  "postStartCommand": "bash /ros2_ws/src/nav3d/.devcontainer/update_testmate_env.sh",
   "customizations": {
     "vscode": {
       "extensions": [
-        "Ranch-Hand-Robotics.rde-ros-2",
+        "matepek.vscode-catch2-test-adapter",
         "Ranch-Hand-Robotics.urdf-editor",
         "ms-vscode.cpptools",
         "ms-vscode.cmake-tools",
@@ -44,6 +45,7 @@
           }
         },
         "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.cwd": "/ros2_ws",
         "terminal.integrated.automationProfile.linux": {
           "path": "/bin/bash"
         },

@@ -19,7 +19,9 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-add_executable(nav3d_px4_adapter src/offboard_control.cpp src/vio_odometry_bridge.cpp src/offboard_control_node.cpp)
+set(adapter_sources src/nav3d_px4_adapter.cpp src/vio_odometry_bridge.cpp)
+
+add_executable(nav3d_px4_adapter ${adapter_sources} src/nav3d_px4_adapter_node.cpp)
 target_include_directories(
     nav3d_px4_adapter PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
 )
@@ -39,5 +41,24 @@ ament_target_dependencies(
 install(TARGETS nav3d_px4_adapter DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION include)
+
+if (BUILD_TESTING)
+    find_package(ament_cmake_gtest REQUIRED)
+
+    ament_add_gtest(test_nav3d_px4_adapter test/test_nav3d_px4_adapter.cpp ${adapter_sources})
+    target_include_directories(test_nav3d_px4_adapter PRIVATE include)
+    target_link_libraries(test_nav3d_px4_adapter Eigen3::Eigen)
+    ament_target_dependencies(
+        test_nav3d_px4_adapter
+        rclcpp
+        nav3d_msgs
+        nav_msgs
+        px4_msgs
+        tf2
+        tf2_ros
+        tf2_geometry_msgs
+        geometry_msgs
+    )
+endif ()
 
 ament_package()

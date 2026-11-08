@@ -32,7 +32,36 @@
     "editor.defaultFormatter": "cheshirekow.cmake-format"
   },
   "cmakeFormat.executable": "cmake-format",
-  "ROS2.distro": "jazzy",
+  "testMate.cpp.test.advancedExecutables": [
+    {
+      "pattern": "/ros2_ws/build/nav3d_*/test_*",
+      "cwd": "${absDirpath}",
+      "envFile": "/ros2_ws/.testmate-env.json",
+      "dependsOn": [
+        "/ros2_ws/.testmate-env.json"
+      ],
+      "exclude": "files.exclude",
+      "gtest": {
+        "testGrouping": {
+          "groupByLabel": {
+            "label": "${absDirpath[-1:]}",
+            "groupByExecutable": {
+              "label": "${baseFilename}"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "testMate.cpp.test.parallelExecutionLimit": 1,
+  "testMate.cpp.debug.configTemplate": {
+    "type": "cppdbg",
+    "MIMode": "gdb",
+    "program": "${exec}",
+    "args": "${argsArray}",
+    "cwd": "${cwd}",
+    "environment": "${envObjArray}"
+  },
   "python.autoComplete.extraPaths": [
     "/opt/ros/jazzy/opt/gz_sim_vendor/lib/python",
     "/opt/ros/jazzy/opt/sdformat_vendor/lib/python",

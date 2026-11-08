@@ -11,9 +11,9 @@ if [[ ! -f install/setup.bash ]]; then
 fi
 source install/setup.bash
 
-# Only CTest cases explicitly labeled "unit" belong to this phase.
-# The current tree has none; this excludes lint and generated px4_msgs tests.
+# System tests run in their dedicated CI step. Run every test registered by the
+# remaining Nav3D packages, including new tests added with ament_add_gtest.
 colcon --log-base log test --base-paths nav3d_* --build-base build \
-  --test-result-base build --return-code-on-test-failure \
-  --ctest-args -L '^unit$'
-colcon test-result --test-result-base build --verbose
+  --test-result-base log/nav3d_package_tests --packages-skip nav3d_system_tests \
+  --return-code-on-test-failure
+colcon test-result --test-result-base log/nav3d_package_tests --verbose

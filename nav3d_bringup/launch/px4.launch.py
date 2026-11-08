@@ -29,13 +29,19 @@ def _start_sitl(context):
     if not px4_dir:
         workspace_root = os.environ.get("NAV3D_WORKSPACE_ROOT")
         if not workspace_root:
-            raise RuntimeError("Set PX4_AUTOPILOT_DIR or NAV3D_WORKSPACE_ROOT to start PX4 SITL")
+            raise RuntimeError(
+                "Set PX4_AUTOPILOT_DIR or NAV3D_WORKSPACE_ROOT to start PX4 SITL"
+            )
         px4_dir = str(Path(workspace_root) / "PX4-Autopilot")
 
     px4_build = Path(px4_dir) / "build" / "px4_sitl_default"
     px4_binary = px4_build / "bin" / "px4"
     px4_rootfs = px4_build / "rootfs"
-    if not px4_binary.is_file() or not os.access(px4_binary, os.X_OK) or not px4_rootfs.is_dir():
+    if (
+        not px4_binary.is_file()
+        or not os.access(px4_binary, os.X_OK)
+        or not px4_rootfs.is_dir()
+    ):
         raise RuntimeError(f"PX4 SITL must be built before launch: {px4_binary}")
 
     px4_param = px4_binary.with_name("px4-param")
@@ -74,9 +80,19 @@ def _start_sitl(context):
                 check=False,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
-            return [EmitEvent(event=Shutdown(reason=f"PX4 NAV_DLL_ACT override failed: {exc}"))]
+            return [
+                EmitEvent(
+                    event=Shutdown(reason=f"PX4 NAV_DLL_ACT override failed: {exc}")
+                )
+            ]
         if result.returncode != 0:
-            return [EmitEvent(event=Shutdown(reason=f"PX4 NAV_DLL_ACT override exited {result.returncode}"))]
+            return [
+                EmitEvent(
+                    event=Shutdown(
+                        reason=f"PX4 NAV_DLL_ACT override exited {result.returncode}"
+                    )
+                )
+            ]
         return []
 
     # The X500 airframe changes this default after PX4_PARAM_* values are processed.
@@ -95,7 +111,11 @@ def _start_sitl(context):
         return []
 
     return [
-        RegisterEventHandler(OnProcessIO(target_action=px4_sitl, on_stdout=on_px4_output, on_stderr=on_px4_output)),
+        RegisterEventHandler(
+            OnProcessIO(
+                target_action=px4_sitl, on_stdout=on_px4_output, on_stderr=on_px4_output
+            )
+        ),
         px4_sitl,
     ]
 
@@ -105,13 +125,20 @@ def generate_launch_description() -> LaunchDescription:
     use_sim_time = LaunchConfiguration("use_sim_time")
     log_level = LaunchConfiguration("log_level")
     sitl_started = {"value": False}
-    params_file = Path(get_package_share_directory("nav3d_bringup")) / "params" / "nav3d_params.yaml"
+    params_file = (
+        Path(get_package_share_directory("nav3d_bringup"))
+        / "params"
+        / "nav3d_params.yaml"
+    )
     with params_file.open(encoding="utf-8") as stream:
         adapter_params = yaml.safe_load(stream)["nav3d_px4_adapter"]["ros__parameters"]
 
     def on_spawn_exit(event, _context):
         try:
-            is_spawn = isinstance(event.action, Node) and event.action.node_name.rsplit("/", 1)[-1] == "spawn_uav"
+            is_spawn = (
+                isinstance(event.action, Node)
+                and event.action.node_name.rsplit("/", 1)[-1] == "spawn_uav"
+            )
         except RuntimeError:
             return []
         if not is_spawn or event.returncode != 0 or sitl_started["value"]:
