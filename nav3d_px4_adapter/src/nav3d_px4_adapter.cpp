@@ -33,9 +33,13 @@ Nav3dPx4Adapter::Nav3dPx4Adapter(const rclcpp::NodeOptions& options)
     altitude_tolerance_ = declare_parameter<double>("altitude_tolerance", 0.1);
 
     odom_topic_ = declare_parameter<std::string>("odom_topic", odom_topic_);
+    control_frame_ = declare_parameter<std::string>("control_frame", control_frame_);
     waypoint_topic_ = declare_parameter<std::string>("waypoint_topic", waypoint_topic_);
     vehicle_state_topic_ = declare_parameter<std::string>("vehicle_state_topic", vehicle_state_topic_);
 
+    if (control_frame_.empty()) {
+        throw std::invalid_argument("Control frame must be nonempty");
+    }
     if (!std::isfinite(vehicle_state_rate_hz_) || vehicle_state_rate_hz_ <= 0.0 ||
         !std::isfinite(vehicle_status_timeout_s_) || vehicle_status_timeout_s_ <= 0.0 ||
         !std::isfinite(vehicle_land_detected_timeout_s_) || vehicle_land_detected_timeout_s_ <= 0.0) {
@@ -60,7 +64,7 @@ Nav3dPx4Adapter::Nav3dPx4Adapter(const rclcpp::NodeOptions& options)
     vehicle_state_pub_ = create_publisher<nav3d_msgs::msg::VehicleState>(
         vehicle_state_topic_, rclcpp::QoS(rclcpp::KeepLast(1)).reliable().durability_volatile());
 
-    odometry_bridge_ = std::make_unique<VioOdometryBridge>(*this);
+    odometry_bridge_ = std::make_unique<VioOdometryBridge>(*this, control_frame_);
 
     rmw_qos_profile_t odom_qos_profile = rmw_qos_profile_sensor_data;
     auto odom_qos = rclcpp::QoS(rclcpp::QoSInitialization(odom_qos_profile.history, 5), odom_qos_profile);
@@ -206,6 +210,12 @@ void Nav3dPx4Adapter::fillPositionVelocityFields(px4_msgs::msg::TrajectorySetpoi
 }
 
 void Nav3dPx4Adapter::waypointCallback(const nav3d_msgs::msg::TrajectoryPoint::SharedPtr msg) {
+    if (msg->header.frame_id != control_frame_) {
+        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "Ignoring waypoint in frame '%s'; expected '%s'",
+                             msg->header.frame_id.c_str(), control_frame_.c_str());
+        return;
+    }
+
     last_valid_setpoint_enu_ =
         EnuSetpoint{msg->pose, msg->velocity_valid ? msg->velocity : geometry_msgs::msg::Twist{}};
     last_waypoint_time_ = get_clock()->now();

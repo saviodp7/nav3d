@@ -7,10 +7,10 @@
 
 namespace nav3d_px4_adapter {
 
-VioOdometryBridge::VioOdometryBridge(rclcpp::Node& node) : node_(node) {
+VioOdometryBridge::VioOdometryBridge(rclcpp::Node& node, const std::string& control_frame)
+    : node_(node), control_frame_(control_frame) {
     px4_topic_ = node_.declare_parameter<std::string>("px4_topic", "/fmu/in/vehicle_visual_odometry");
 
-    odom_frame_ = node_.declare_parameter<std::string>("odom_frame", "odom");
     base_frame_ = node_.declare_parameter<std::string>("base_frame", "base_link");
 
     pose_frame_ = node_.declare_parameter<int>("pose_frame", 1);
@@ -65,7 +65,7 @@ void VioOdometryBridge::publishOdometry(const nav_msgs::msg::Odometry::SharedPtr
 
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp = msg->header.stamp;
-    t.header.frame_id = odom_frame_;
+    t.header.frame_id = control_frame_;
     t.child_frame_id = base_frame_;
     t.transform.translation.x = msg->pose.pose.position.x;
     t.transform.translation.y = msg->pose.pose.position.y;

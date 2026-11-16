@@ -120,6 +120,7 @@ class Nav3dPx4Adapter final : public rclcpp::Node {
     rclcpp::Time last_offboard_command_time_{rclcpp::Time(0, 0, RCL_ROS_TIME)};
 
     std::string odom_topic_{"/odom"};
+    std::string control_frame_{"odom"};
     std::string waypoint_topic_{"uav/waypoint"};
     std::string vehicle_state_topic_{"uav/state"};
 

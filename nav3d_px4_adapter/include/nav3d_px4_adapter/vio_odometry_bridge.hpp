@@ -11,10 +11,10 @@
 
 namespace nav3d_px4_adapter {
 
-// PX4 odometry conversion and the temporary odom -> base_link TF owner.
+// PX4 odometry conversion and the temporary control-frame -> base_link TF owner.
 class VioOdometryBridge final {
   public:
-    explicit VioOdometryBridge(rclcpp::Node& node);
+    VioOdometryBridge(rclcpp::Node& node, const std::string& control_frame);
     void publishOdometry(const nav_msgs::msg::Odometry::SharedPtr msg);
 
   private:
@@ -23,7 +23,7 @@ class VioOdometryBridge final {
     rclcpp::Node& node_;
     std::string px4_topic_;
 
-    std::string odom_frame_;
+    std::string control_frame_;
     std::string base_frame_;
 
     int pose_frame_{1};

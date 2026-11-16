@@ -16,6 +16,7 @@ controller_server:
     waypoint_topic: "uav/waypoint"
 
     global_frame: "map"
+    control_frame: &control_frame "odom"
     robot_base_frame: "base_link"
     transform_tolerance: 0.1
 
@@ -30,6 +31,7 @@ controller_server:
 nav3d_px4_adapter:
   ros__parameters:
     control_rate_hz: 50.0
+    control_frame: *control_frame
     vehicle_state_rate_hz: 2.0
     vehicle_status_timeout_s: 2.0
     vehicle_land_detected_timeout_s: 2.0

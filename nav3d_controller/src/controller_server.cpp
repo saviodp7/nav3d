@@ -38,6 +38,7 @@ ControllerServer::ControllerServer(const rclcpp::NodeOptions& options)
     declare_parameter_if_not_declared(this, "waypoint_topic", rclcpp::ParameterValue(std::string("uav/waypoint")));
 
     declare_parameter_if_not_declared(this, "global_frame", rclcpp::ParameterValue(std::string("map")));
+    declare_parameter_if_not_declared(this, "control_frame", rclcpp::ParameterValue(std::string("odom")));
     declare_parameter_if_not_declared(this, "robot_base_frame", rclcpp::ParameterValue(std::string("base_link")));
     declare_parameter_if_not_declared(this, "transform_tolerance", rclcpp::ParameterValue(0.1));
 
@@ -60,8 +61,13 @@ nav3d_util::CallbackReturn ControllerServer::on_configure(const rclcpp_lifecycle
     waypoint_topic_ = get_parameter("waypoint_topic").as_string();
 
     global_frame_ = get_parameter("global_frame").as_string();
+    control_frame_ = get_parameter("control_frame").as_string();
     robot_base_frame_ = get_parameter("robot_base_frame").as_string();
     transform_tolerance_ = get_parameter("transform_tolerance").as_double();
+    if (control_frame_.empty()) {
+        RCLCPP_ERROR(get_logger(), "control_frame must be nonempty");
+        return nav3d_util::CallbackReturn::FAILURE;
+    }
 
     xyz_goal_tolerance_ = get_parameter("xyz_goal_tolerance").as_double();
     yaw_goal_tolerance_ = get_parameter("yaw_goal_tolerance").as_double();
@@ -176,10 +182,11 @@ void ControllerServer::computeControl() {
 
             auto cmd = getCurrentCommand();
             if (cmd.has_value()) {
-                cmd->header.stamp = now();
-                cmd->header.frame_id = global_frame_;
                 cmd->velocity_valid = true;
                 cmd->acceleration_valid = false;
+                transformCommandToControlFrame(*cmd);
+                cmd->header.stamp = now();
+                cmd->header.frame_id = control_frame_;
                 waypoint_pub_->publish(*cmd);
             }
 
@@ -243,6 +250,9 @@ void ControllerServer::computeControl() {
 void ControllerServer::generateTimedTrajectory(const nav_msgs::msg::Path& path) {
     if (path.poses.empty()) {
         throw nav3d_core::InvalidPath("Path is empty.");
+    }
+    if (path.header.frame_id != global_frame_) {
+        throw nav3d_core::InvalidPath("Path frame must be " + global_frame_ + ", got " + path.header.frame_id);
     }
 
     current_path_.clear();
@@ -369,6 +379,41 @@ std::optional<nav3d_msgs::msg::TrajectoryPoint> ControllerServer::getCurrentComm
     out.pose = pose;
     out.velocity = tw;
     return out;
+}
+
+void ControllerServer::transformCommandToControlFrame(nav3d_msgs::msg::TrajectoryPoint& command) {
+    tf2::Transform transform;
+    if (!nav3d_util::getTransform(global_frame_, control_frame_, tf2::durationFromSec(transform_tolerance_), tf_buffer_,
+                                  transform)) {
+        throw nav3d_core::ControllerTFError("Unable to transform command from " + global_frame_ + " to " +
+                                            control_frame_);
+    }
+
+    const tf2::Vector3 position(command.pose.position.x, command.pose.position.y, command.pose.position.z);
+    const tf2::Vector3 transformed_position = transform * position;
+    command.pose.position.x = transformed_position.x();
+    command.pose.position.y = transformed_position.y();
+    command.pose.position.z = transformed_position.z();
+
+    tf2::Quaternion orientation;
+    tf2::fromMsg(command.pose.orientation, orientation);
+    command.pose.orientation = tf2::toMsg(transform.getRotation() * orientation);
+
+    const auto rotate_vector = [&transform](geometry_msgs::msg::Vector3& vector) {
+        const tf2::Vector3 original(vector.x, vector.y, vector.z);
+        const tf2::Vector3 rotated = transform.getBasis() * original;
+        vector.x = rotated.x();
+        vector.y = rotated.y();
+        vector.z = rotated.z();
+    };
+    if (command.velocity_valid) {
+        rotate_vector(command.velocity.linear);
+        rotate_vector(command.velocity.angular);
+    }
+    if (command.acceleration_valid) {
+        rotate_vector(command.acceleration.linear);
+        rotate_vector(command.acceleration.angular);
+    }
 }
 
 bool ControllerServer::isGoalReached() {

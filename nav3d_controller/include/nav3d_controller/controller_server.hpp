@@ -49,6 +49,7 @@ class ControllerServer : public nav3d_util::LifecycleNode {
 
     void generateTimedTrajectory(const nav_msgs::msg::Path& path);
     std::optional<nav3d_msgs::msg::TrajectoryPoint> getCurrentCommand();
+    void transformCommandToControlFrame(nav3d_msgs::msg::TrajectoryPoint& command);
     bool isGoalReached();
 
     rclcpp::Subscription<nav3d_msgs::msg::SpeedLimit>::SharedPtr speed_limit_sub_;
@@ -58,6 +59,7 @@ class ControllerServer : public nav3d_util::LifecycleNode {
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     std::string global_frame_{"map"};
+    std::string control_frame_{"odom"};
     std::string robot_base_frame_{"base_link"};
     double transform_tolerance_{0.1};
 
