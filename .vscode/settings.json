@@ -77,5 +77,6 @@
     "/opt/ros/jazzy/opt/gz_msgs_vendor/lib/python",
     "/opt/ros/jazzy/opt/gz_math_vendor/lib/python",
     "/opt/ros/jazzy/lib/python3.12/site-packages"
-  ]
+  ],
+  "ROS2.distro": "jazzy"
 }

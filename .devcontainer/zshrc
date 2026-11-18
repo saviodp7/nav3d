@@ -8,3 +8,14 @@ fi
 if [[ -f /ros2_ws/install/setup.zsh ]]; then
   source /ros2_ws/install/setup.zsh
 fi
+
+_nav3d_register_completion() {
+  [[ -n "${_comps[ros2]-}" && -n "${_comps[colcon]-}" ]] && return
+  command -v register-python-argcomplete >/dev/null 2>&1 || return
+  autoload -U +X bashcompinit && bashcompinit
+  eval "$(register-python-argcomplete ros2)"
+  eval "$(register-python-argcomplete colcon)"
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _nav3d_register_completion
+_nav3d_register_completion
